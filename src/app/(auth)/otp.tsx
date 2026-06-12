@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, TextInput, KeyboardAvoidingView, Platform, Touc
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Button } from '../../components/ui/Button';
+import { TopNav } from '../../components/ui/TopNav';
 import { useAuth } from '../../context/AuthContext';
 
 export default function OtpScreen() {
-  const { phoneNumber, verifyOtp } = useAuth();
+  const { phoneNumber } = useAuth();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const inputs = useRef<Array<TextInput | null>>([]);
 
   const handleChange = (text: string, index: number) => {
@@ -30,10 +32,7 @@ export default function OtpScreen() {
   const handleVerify = () => {
     const otpValue = otp.join('');
     if (otpValue.length === 6) {
-      // In a real app, verify the OTP via API here.
-      // If the user was just logging in, verifyOtp() and route to Dashboard.
-      // If it's a new user, route to partner-type. We'll simulate by checking if phone starts with a 9 or something,
-      // but for this flow, let's just route to partner-type for the demo.
+      // For this demo, route to partner type selection next
       router.push('/(auth)/partner-type' as any);
     }
   };
@@ -41,13 +40,7 @@ export default function OtpScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Text style={styles.backText}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>OTP Verification</Text>
-          <View style={{ width: 40 }} />
-        </View>
+        <TopNav title="OTP Verification" />
 
         <View style={styles.content}>
           <View style={styles.iconContainer}>
@@ -64,12 +57,17 @@ export default function OtpScreen() {
               <TextInput
                 key={index}
                 ref={(ref) => { inputs.current[index] = ref; }}
-                style={styles.otpInput}
+                style={[
+                  styles.otpInput,
+                  focusedIndex === index && styles.otpInputFocused
+                ]}
                 keyboardType="number-pad"
                 maxLength={1}
                 value={digit}
                 onChangeText={(text) => handleChange(text, index)}
                 onKeyPress={(e) => handleKeyPress(e, index)}
+                onFocus={() => setFocusedIndex(index)}
+                onBlur={() => setFocusedIndex(null)}
               />
             ))}
           </View>
@@ -83,12 +81,14 @@ export default function OtpScreen() {
 
           <View style={styles.resendContainer}>
             <Text style={styles.resendText}>Didn't receive? </Text>
-            <Text style={styles.resendLink}>Resend OTP</Text>
+            <TouchableOpacity>
+              <Text style={styles.resendLink}>Resend OTP</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.demoNotice}>
             <Text style={styles.demoText}>
-              ⚡ Demo mode: Any 6 digit OTP will work to proceed.
+              ⚡ Demo mode: OTP is pre-filled as <Text style={styles.demoTextBold}>123456</Text>
             </Text>
           </View>
         </View>
@@ -101,27 +101,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    height: 56,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  backButton: {
-    padding: 8,
-  },
-  backText: {
-    fontSize: 24,
-    color: '#2D3134',
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#2D3134',
   },
   content: {
     flex: 1,
@@ -143,7 +122,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#64748B',
     textAlign: 'center',
     lineHeight: 20,
@@ -154,20 +133,30 @@ const styles = StyleSheet.create({
   },
   otpContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    gap: 10,
     marginBottom: 32,
   },
   otpInput: {
-    width: 45,
-    height: 52,
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: 12,
-    fontSize: 20,
+    width: 52,
+    height: 58,
+    borderWidth: 1.5,
+    borderColor: '#D2D6DC',
+    borderRadius: 8,
+    fontSize: 24,
     fontWeight: '700',
     textAlign: 'center',
     color: '#2D3134',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#FFFFFF',
+  },
+  otpInputFocused: {
+    borderColor: '#DE1F26',
+    backgroundColor: 'rgba(222,31,38,0.04)',
+    shadowColor: '#DE1F26',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 1,
   },
   button: {
     marginBottom: 24,
@@ -187,15 +176,19 @@ const styles = StyleSheet.create({
   },
   demoNotice: {
     marginTop: 'auto',
-    padding: 16,
-    backgroundColor: '#FFF5F5',
+    padding: 14,
+    backgroundColor: 'rgba(222,31,38,0.04)',
     borderWidth: 1,
-    borderColor: '#FECDD3',
-    borderRadius: 12,
+    borderColor: 'rgba(222,31,38,0.15)',
+    borderRadius: 8,
   },
   demoText: {
     fontSize: 12,
-    color: '#DE1F26',
+    color: '#64748B',
     textAlign: 'center',
+  },
+  demoTextBold: {
+    color: '#DE1F26',
+    fontWeight: '600',
   },
 });

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Button } from '../../components/ui/Button';
-import { useAuth } from '../../context/AuthContext';
+import { TopNav } from '../../components/ui/TopNav';
 
 const PARTNERS = [
   {
@@ -38,26 +38,16 @@ const PARTNERS = [
 
 export default function PartnerTypeScreen() {
   const [selected, setSelected] = useState<string | null>(null);
-  const { verifyOtp } = useAuth();
 
   const handleContinue = () => {
     if (selected) {
-      // In a real app, save the partner type and proceed to KYC.
-      // For this implementation phase, we authenticate and go to Dashboard.
-      verifyOtp();
-      router.replace('/');
+      router.push('/(auth)/personal-details' as any);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Partner Type</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <TopNav title="Partner Type" />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.titleContainer}>
@@ -122,27 +112,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    height: 56,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  backButton: {
-    padding: 8,
-  },
-  backText: {
-    fontSize: 24,
-    color: '#2D3134',
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#2D3134',
   },
   content: {
     padding: 24,
