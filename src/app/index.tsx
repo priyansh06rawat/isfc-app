@@ -1,14 +1,23 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { useEffect } from 'react';
 import { router } from 'expo-router';
+import { useAuth } from '../context/AuthContext';
 
 export default function SplashScreen() {
+  const { isAuthenticated, isLoading } = useAuth();
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      router.replace('/(tabs)');
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!isLoading) {
+      const timer = setTimeout(() => {
+        if (isAuthenticated) {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/(auth)/login' as any);
+        }
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, isAuthenticated]);
 
   return (
     <View style={styles.container}>
