@@ -5,12 +5,18 @@ interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
   leftIcon?: React.ReactNode;
+  required?: boolean;
 }
 
-export function Input({ label, error, leftIcon, style, ...props }: InputProps) {
+export function Input({ label, error, leftIcon, required, style, ...props }: InputProps) {
   return (
     <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && (
+        <Text style={styles.label}>
+          {label}
+          {required && <Text style={styles.requiredAsterisk}> *</Text>}
+        </Text>
+      )}
       <View style={[styles.inputContainer, error ? styles.inputError : null]}>
         {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
         <TextInput
@@ -33,6 +39,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2D3134',
     marginBottom: 8,
+  },
+  requiredAsterisk: {
+    color: '#DE1F26',
   },
   inputContainer: {
     flexDirection: 'row',

@@ -35,18 +35,19 @@ export default function KycAadhaarScreen() {
             maxLength={4}
             value={aadhaar}
             onChangeText={setAadhaar}
+            required
           />
 
           <View style={styles.uploadRow}>
             <TouchableOpacity style={styles.uploadBoxHalf}>
               <Text style={styles.uploadIcon}>📄</Text>
-              <Text style={styles.uploadText}>Aadhaar Front</Text>
+              <Text style={styles.uploadText}>Aadhaar Front <Text style={styles.asterisk}>*</Text></Text>
               <Text style={styles.uploadSubtext}>Upload</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.uploadBoxHalf}>
               <Text style={styles.uploadIcon}>📄</Text>
-              <Text style={styles.uploadText}>Aadhaar Back</Text>
+              <Text style={styles.uploadText}>Aadhaar Back <Text style={styles.asterisk}>*</Text></Text>
               <Text style={styles.uploadSubtext}>Upload</Text>
             </TouchableOpacity>
           </View>
@@ -130,6 +131,9 @@ const styles = StyleSheet.create({
     color: '#475569',
     marginBottom: 4,
     textAlign: 'center',
+  },
+  asterisk: {
+    color: '#DE1F26',
   },
   uploadSubtext: {
     fontSize: 11,

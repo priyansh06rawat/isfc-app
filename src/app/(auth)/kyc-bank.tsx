@@ -13,6 +13,17 @@ export default function KycBankScreen() {
     ifsc: '',
     accType: '',
   });
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+
+  const handleVerify = () => {
+    if (!form.accNumber || !form.ifsc) return;
+    setIsVerifying(true);
+    setTimeout(() => {
+      setIsVerifying(false);
+      setIsVerified(true);
+    }, 1500);
+  };
 
   const handleContinue = () => {
     router.push('/(auth)/kyc-agreement' as any);
@@ -41,7 +52,8 @@ export default function KycBankScreen() {
             label="Account Holder Name"
             placeholder="As per bank records"
             value={form.accName}
-            onChangeText={(v) => updateForm('accName', v)}
+            onChangeText={(v) => { updateForm('accName', v); setIsVerified(false); }}
+            required
           />
 
           <Input
@@ -49,7 +61,8 @@ export default function KycBankScreen() {
             placeholder="Enter account number"
             keyboardType="number-pad"
             value={form.accNumber}
-            onChangeText={(v) => updateForm('accNumber', v)}
+            onChangeText={(v) => { updateForm('accNumber', v); setIsVerified(false); }}
+            required
           />
 
           <Input
@@ -58,7 +71,8 @@ export default function KycBankScreen() {
             autoCapitalize="characters"
             maxLength={11}
             value={form.ifsc}
-            onChangeText={(v) => updateForm('ifsc', v)}
+            onChangeText={(v) => { updateForm('ifsc', v); setIsVerified(false); }}
+            required
           />
 
           <Input
@@ -69,9 +83,12 @@ export default function KycBankScreen() {
           />
 
           <Button
-            title="₹1 Penny Drop Verification"
-            variant="outline"
-            style={styles.verifyButton}
+            title={isVerified ? "✅ Bank Verified" : "₹1 Penny Drop Verification"}
+            variant={isVerified ? "primary" : "outline"}
+            style={[styles.verifyButton, isVerified && styles.verifiedButton]}
+            isLoading={isVerifying}
+            onPress={handleVerify}
+            disabled={!form.accNumber || !form.ifsc || isVerified}
           />
 
           <Text style={styles.uploadLabel}>Upload Cancelled Cheque / Statement</Text>
@@ -129,6 +146,10 @@ const styles = StyleSheet.create({
   },
   verifyButton: {
     marginBottom: 24,
+  },
+  verifiedButton: {
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
   },
   uploadLabel: {
     fontSize: 13,

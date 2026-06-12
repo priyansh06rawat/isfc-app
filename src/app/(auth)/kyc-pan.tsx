@@ -8,6 +8,17 @@ import { TopNav } from '../../components/ui/TopNav';
 
 export default function KycPanScreen() {
   const [pan, setPan] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+
+  const handleVerify = () => {
+    if (pan.length !== 10) return;
+    setIsVerifying(true);
+    setTimeout(() => {
+      setIsVerifying(false);
+      setIsVerified(true);
+    }, 1500);
+  };
 
   const handleContinue = () => {
     router.push('/(auth)/kyc-aadhaar' as any);
@@ -34,13 +45,20 @@ export default function KycPanScreen() {
             autoCapitalize="characters"
             maxLength={10}
             value={pan}
-            onChangeText={setPan}
+            onChangeText={(text) => {
+              setPan(text);
+              setIsVerified(false);
+            }}
+            required
           />
 
           <Button
-            title="Verify via NSDL"
-            variant="outline"
-            style={styles.verifyButton}
+            title={isVerified ? "✅ Verified" : "Verify via NSDL"}
+            variant={isVerified ? "primary" : "outline"}
+            style={[styles.verifyButton, isVerified && styles.verifiedButton]}
+            isLoading={isVerifying}
+            onPress={handleVerify}
+            disabled={pan.length !== 10 || isVerified}
           />
 
           <View style={styles.dividerContainer}>
@@ -111,6 +129,10 @@ const styles = StyleSheet.create({
   verifyButton: {
     marginTop: -8,
     marginBottom: 24,
+  },
+  verifiedButton: {
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
   },
   dividerContainer: {
     flexDirection: 'row',

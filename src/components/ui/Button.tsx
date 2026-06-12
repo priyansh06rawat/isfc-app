@@ -7,14 +7,15 @@ import {
   TouchableOpacityProps,
   ViewStyle,
   TextStyle,
+  StyleProp,
 } from 'react-native';
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
   variant?: 'primary' | 'outline' | 'secondary';
   isLoading?: boolean;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
 }
 
 export function Button({

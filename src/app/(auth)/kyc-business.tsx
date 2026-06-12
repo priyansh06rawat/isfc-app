@@ -41,11 +41,12 @@ export default function KycBusinessScreen() {
             placeholder="e.g. GST Certificate / Shop Act"
             value={form.docType}
             onChangeText={(v) => updateForm('docType', v)}
+            required
           />
 
           <TouchableOpacity style={styles.uploadBox}>
             <Text style={styles.uploadIcon}>📄</Text>
-            <Text style={styles.uploadText}>Upload Business Document</Text>
+            <Text style={styles.uploadText}>Upload Business Document <Text style={styles.asterisk}>*</Text></Text>
             <Text style={styles.uploadSubtext}>Max size 5MB (PDF, JPG, PNG)</Text>
           </TouchableOpacity>
 
@@ -130,6 +131,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#475569',
     marginBottom: 4,
+  },
+  asterisk: {
+    color: '#DE1F26',
   },
   uploadSubtext: {
     fontSize: 12,
