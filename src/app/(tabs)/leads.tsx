@@ -13,6 +13,7 @@ export default function LeadsScreen() {
   const { leads } = useAuth();
   
   const [search, setSearch] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
 
   // Animation hooks
@@ -95,14 +96,19 @@ export default function LeadsScreen() {
         </View>
         
         {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <MaterialCommunityIcons name="magnify" size={20} color="#64748B" style={styles.searchIcon} />
+        <View style={[
+          styles.searchContainer,
+          searchFocused && { borderColor: '#DE1F26', shadowColor: '#DE1F26', shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 }
+        ]}>
+          <MaterialCommunityIcons name="magnify" size={20} color={searchFocused ? '#DE1F26' : '#64748B'} style={styles.searchIcon} />
           <TextInput 
             style={styles.searchInput}
             placeholder="Search by name, ID or city..."
             placeholderTextColor="#94A3B8"
             value={search}
             onChangeText={setSearch}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')}>
@@ -156,6 +162,9 @@ export default function LeadsScreen() {
                     style={styles.leadCard}
                     onPress={() => handleLeadPress(lead.id)}
                   >
+                    {/* Status vertical stripe on the left edge */}
+                    <View style={[styles.statusStripe, { backgroundColor: status.color }]} />
+
                     <View style={[styles.leadAvatar, { backgroundColor: lead.color || '#DE1F26' }]}>
                       <Text style={styles.avatarText}>{initials}</Text>
                     </View>
@@ -257,6 +266,11 @@ const styles = StyleSheet.create({
   filterChipActive: {
     backgroundColor: '#DE1F26',
     borderColor: '#DE1F26',
+    shadowColor: '#DE1F26',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
   },
   filterChipText: {
     fontSize: 13,
@@ -265,6 +279,7 @@ const styles = StyleSheet.create({
   },
   filterChipTextActive: {
     color: '#FFFFFF',
+    fontWeight: '700',
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -288,15 +303,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 14,
+    paddingLeft: 20,
     marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    overflow: 'hidden',
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8 },
       android: { elevation: 2 },
     }),
+  },
+  statusStripe: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 5,
   },
   leadAvatar: {
     width: 44,

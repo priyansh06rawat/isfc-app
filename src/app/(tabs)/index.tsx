@@ -151,15 +151,15 @@ export default function DashboardScreen() {
 
             {/* Stats Row */}
             <View style={styles.statsRow}>
-              <TouchableScale style={styles.statBox} onPress={() => router.push('/(tabs)/leads')}>
+              <TouchableScale style={[styles.statBox, { borderTopColor: '#DE1F26', borderTopWidth: 3 }]} onPress={() => router.push('/(tabs)/leads')}>
                 <Text style={[styles.statValue, { color: '#DE1F26' }]}>{leads.length}</Text>
                 <Text style={styles.statLabel}>Leads</Text>
               </TouchableScale>
-              <TouchableScale style={styles.statBox} onPress={() => router.push('/(tabs)/payouts')}>
+              <TouchableScale style={[styles.statBox, { borderTopColor: '#10B981', borderTopWidth: 3 }]} onPress={() => router.push('/(tabs)/payouts')}>
                 <Text style={[styles.statValue, { color: '#10B981' }]}>₹4.2Cr</Text>
                 <Text style={styles.statLabel}>Disbursed</Text>
               </TouchableScale>
-              <TouchableScale style={styles.statBox} onPress={() => router.push('/(tabs)/payouts')}>
+              <TouchableScale style={[styles.statBox, { borderTopColor: '#F59E0B', borderTopWidth: 3 }]} onPress={() => router.push('/(tabs)/payouts')}>
                 <Text style={[styles.statValue, { color: '#F59E0B' }]}>₹84K</Text>
                 <Text style={styles.statLabel}>Earned</Text>
               </TouchableScale>
@@ -171,28 +171,28 @@ export default function DashboardScreen() {
             <Text style={styles.sectionTitle}>Quick Actions</Text>
             <View style={styles.quickActionsGrid}>
               <TouchableScale style={styles.actionBtn} onPress={() => router.push('/(tabs)/new-lead' as any)}>
-                <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(222,31,38,0.1)' }]}>
+                <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(222,31,38,0.05)', borderColor: 'rgba(222,31,38,0.15)', borderWidth: 1 }]}>
                   <MaterialCommunityIcons name="plus" size={24} color="#DE1F26" />
                 </View>
                 <Text style={styles.actionLabel}>New Lead</Text>
               </TouchableScale>
 
               <TouchableScale style={styles.actionBtn} onPress={() => router.push('/(tabs)/leads')}>
-                <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(0,212,255,0.12)' }]}>
+                <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(0,212,255,0.06)', borderColor: 'rgba(0,212,255,0.15)', borderWidth: 1 }]}>
                   <MaterialCommunityIcons name="file-document-outline" size={24} color="#00D4FF" />
                 </View>
                 <Text style={styles.actionLabel}>My Leads</Text>
               </TouchableScale>
 
               <TouchableScale style={styles.actionBtn} onPress={() => router.push('/(tabs)/payouts')}>
-                <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(0,229,160,0.12)' }]}>
+                <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(0,229,160,0.06)', borderColor: 'rgba(0,229,160,0.15)', borderWidth: 1 }]}>
                   <MaterialCommunityIcons name="cash-multiple" size={24} color="#00E5A0" />
                 </View>
                 <Text style={styles.actionLabel}>Payouts</Text>
               </TouchableScale>
 
               <TouchableScale style={styles.actionBtn} onPress={() => Alert.alert('Desktop Admin', 'Opening India Shelter Admin Dashboard view...')}>
-                <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(255,184,48,0.12)' }]}>
+                <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(255,184,48,0.06)', borderColor: 'rgba(255,184,48,0.15)', borderWidth: 1 }]}>
                   <MaterialCommunityIcons name="monitor" size={24} color="#FFB830" />
                 </View>
                 <Text style={styles.actionLabel}>Dashboard</Text>
@@ -416,9 +416,16 @@ const styles = StyleSheet.create({
   },
   hero: {
     padding: 24,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    shadowColor: '#DE1F26',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.02,
+    shadowRadius: 10,
+    elevation: 1,
   },
   heroHeader: {
     flexDirection: 'row',
@@ -535,15 +542,16 @@ const styles = StyleSheet.create({
   statBox: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 8,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     alignItems: 'center',
     marginHorizontal: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
   },
@@ -789,15 +797,17 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   partnerCard: {
-    backgroundColor: '#DE1F26',
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: '#B91C1C',
+    borderRadius: 20,
+    padding: 22,
     marginBottom: 24,
-    shadowColor: '#DE1F26',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowColor: '#991B1B',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   partnerCardHeader: {
     flexDirection: 'row',
@@ -815,7 +825,8 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 22,
     fontWeight: '900',
-    marginBottom: 16,
+    marginBottom: 20,
+    letterSpacing: 0.5,
   },
   partnerCardRow: {
     flexDirection: 'row',
