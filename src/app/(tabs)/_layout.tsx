@@ -55,6 +55,27 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons name={focused ? 'account' : 'account-outline'} size={26} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="new-lead"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="lead/[id]"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

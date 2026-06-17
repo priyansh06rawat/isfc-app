@@ -5,20 +5,38 @@ import { router } from 'expo-router';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { TopNav } from '../../components/ui/TopNav';
+import { useAuth } from '../../context/AuthContext';
 
 export default function KycBusinessScreen() {
-  const [form, setForm] = useState({
-    docType: '',
-    gstin: '',
-    businessName: '',
-  });
+  const { onboardingData, updateOnboardingData } = useAuth();
+  const [isVerifying, setIsVerifying] = React.useState(false);
+
+  const handleUdhyam = () => {
+    setIsVerifying(true);
+    setTimeout(() => {
+      setIsVerifying(false);
+      updateOnboardingData({
+        isBusinessVerified: true,
+        businessName: 'Sharma Finance Associates',
+        gstin: '27AAAAA0000A1Z5',
+      });
+    }, 1500);
+  };
+
+  const handleUpload = () => {
+    updateOnboardingData({ businessDocUploaded: true });
+  };
 
   const handleContinue = () => {
+    if (!onboardingData.isBusinessVerified && !onboardingData.businessDocUploaded) {
+      alert('Please fetch Udhyam details or upload a valid business proof to proceed.');
+      return;
+    }
     router.push('/(auth)/kyc-bank' as any);
   };
 
   const updateForm = (key: string, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    updateOnboardingData({ [key]: value });
   };
 
   return (
@@ -39,15 +57,43 @@ export default function KycBusinessScreen() {
           <Input
             label="Document Type"
             placeholder="e.g. GST Certificate / Shop Act"
-            value={form.docType}
-            onChangeText={(v) => updateForm('docType', v)}
+            value={onboardingData.businessDocType}
+            onChangeText={(v) => updateForm('businessDocType', v)}
             required
           />
 
-          <TouchableOpacity style={styles.uploadBox}>
-            <Text style={styles.uploadIcon}>📄</Text>
-            <Text style={styles.uploadText}>Upload Business Document <Text style={styles.asterisk}>*</Text></Text>
-            <Text style={styles.uploadSubtext}>Max size 5MB (PDF, JPG, PNG)</Text>
+          <Button
+            title={onboardingData.isBusinessVerified ? "✅ Business Details Verified" : "🏛️ Fetch Udhyam Details via API"}
+            variant="primary"
+            style={[styles.udhyamButton, onboardingData.isBusinessVerified && styles.verifiedButton]}
+            isLoading={isVerifying}
+            onPress={handleUdhyam}
+            disabled={onboardingData.isBusinessVerified}
+          />
+
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>or upload document</Text>
+            <View style={styles.divider} />
+          </View>
+
+          <TouchableOpacity 
+            style={[styles.uploadBox, onboardingData.businessDocUploaded && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} 
+            onPress={handleUpload}
+          >
+            {onboardingData.businessDocUploaded ? (
+              <>
+                <Text style={[styles.uploadIcon, { color: '#10B981' }]}>✅</Text>
+                <Text style={[styles.uploadText, { color: '#065F46' }]}>business_proof.pdf Uploaded</Text>
+                <Text style={styles.uploadSubtext}>Tap to change file</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.uploadIcon}>📄</Text>
+                <Text style={styles.uploadText}>Upload Business Document <Text style={styles.asterisk}>*</Text></Text>
+                <Text style={styles.uploadSubtext}>Max size 5MB (PDF, JPG, PNG)</Text>
+              </>
+            )}
           </TouchableOpacity>
 
           <Input
@@ -55,14 +101,14 @@ export default function KycBusinessScreen() {
             placeholder="22AAAAA0000A1Z5"
             autoCapitalize="characters"
             maxLength={15}
-            value={form.gstin}
+            value={onboardingData.gstin}
             onChangeText={(v) => updateForm('gstin', v)}
           />
 
           <Input
             label="Business Name"
             placeholder="e.g. Sharma Finance Associates"
-            value={form.businessName}
+            value={onboardingData.businessName}
             onChangeText={(v) => updateForm('businessName', v)}
           />
 
@@ -140,6 +186,31 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
   button: {
-    marginTop: 'auto',
+    marginTop: 16,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+    marginTop: 8,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E2E8F0',
+  },
+  dividerText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    paddingHorizontal: 12,
+  },
+  udhyamButton: {
+    backgroundColor: '#0284C7',
+    shadowColor: '#0284C7',
+    marginBottom: 8,
+  },
+  verifiedButton: {
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
   },
 });

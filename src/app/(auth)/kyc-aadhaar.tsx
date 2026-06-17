@@ -5,11 +5,40 @@ import { router } from 'expo-router';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { TopNav } from '../../components/ui/TopNav';
+import { useAuth } from '../../context/AuthContext';
 
 export default function KycAadhaarScreen() {
-  const [aadhaar, setAadhaar] = useState('');
+  const { onboardingData, updateOnboardingData } = useAuth();
+  const [isVerifying, setIsVerifying] = React.useState(false);
+
+  const handleDigiLocker = () => {
+    setIsVerifying(true);
+    setTimeout(() => {
+      setIsVerifying(false);
+      updateOnboardingData({
+        isAadhaarVerified: true,
+        aadhaarLast4: '4321',
+      });
+    }, 1500);
+  };
+
+  const handleUploadFront = () => {
+    updateOnboardingData({ aadhaarFrontUploaded: true });
+  };
+
+  const handleUploadBack = () => {
+    updateOnboardingData({ aadhaarBackUploaded: true });
+  };
 
   const handleContinue = () => {
+    if (onboardingData.aadhaarLast4.length !== 4) {
+      alert('Please enter the last 4 digits of your Aadhaar card.');
+      return;
+    }
+    if (!onboardingData.isAadhaarVerified && (!onboardingData.aadhaarFrontUploaded || !onboardingData.aadhaarBackUploaded)) {
+      alert('Please fetch Aadhaar via API or upload both Front and Back sides to proceed.');
+      return;
+    }
     router.push('/(auth)/kyc-selfie' as any);
   };
 
@@ -33,22 +62,53 @@ export default function KycAadhaarScreen() {
             placeholder="XXXX XXXX 1234"
             keyboardType="number-pad"
             maxLength={4}
-            value={aadhaar}
-            onChangeText={setAadhaar}
+            value={onboardingData.aadhaarLast4}
+            onChangeText={(text) => {
+              updateOnboardingData({ aadhaarLast4: text, isAadhaarVerified: false });
+            }}
             required
           />
 
+          <Button
+            title={onboardingData.isAadhaarVerified ? "✅ Aadhaar Verified (DigiLocker)" : "🏛️ Fetch from DigiLocker API"}
+            variant="primary"
+            style={[styles.digiButton, onboardingData.isAadhaarVerified && styles.verifiedButton]}
+            isLoading={isVerifying}
+            onPress={handleDigiLocker}
+            disabled={onboardingData.isAadhaarVerified}
+          />
+
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>or upload documents</Text>
+            <View style={styles.divider} />
+          </View>
+
           <View style={styles.uploadRow}>
-            <TouchableOpacity style={styles.uploadBoxHalf}>
-              <Text style={styles.uploadIcon}>📄</Text>
-              <Text style={styles.uploadText}>Aadhaar Front <Text style={styles.asterisk}>*</Text></Text>
-              <Text style={styles.uploadSubtext}>Upload</Text>
+            <TouchableOpacity 
+              style={[styles.uploadBoxHalf, onboardingData.aadhaarFrontUploaded && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} 
+              onPress={handleUploadFront}
+            >
+              <Text style={[styles.uploadIcon, onboardingData.aadhaarFrontUploaded && { color: '#10B981' }]}>
+                {onboardingData.aadhaarFrontUploaded ? '✅' : '📄'}
+              </Text>
+              <Text style={[styles.uploadText, onboardingData.aadhaarFrontUploaded && { color: '#065F46' }]}>
+                {onboardingData.aadhaarFrontUploaded ? 'aadhaar_front.jpg' : 'Aadhaar Front'} <Text style={styles.asterisk}>*</Text>
+              </Text>
+              <Text style={styles.uploadSubtext}>{onboardingData.aadhaarFrontUploaded ? 'Uploaded' : 'Upload'}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.uploadBoxHalf}>
-              <Text style={styles.uploadIcon}>📄</Text>
-              <Text style={styles.uploadText}>Aadhaar Back <Text style={styles.asterisk}>*</Text></Text>
-              <Text style={styles.uploadSubtext}>Upload</Text>
+            <TouchableOpacity 
+              style={[styles.uploadBoxHalf, onboardingData.aadhaarBackUploaded && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} 
+              onPress={handleUploadBack}
+            >
+              <Text style={[styles.uploadIcon, onboardingData.aadhaarBackUploaded && { color: '#10B981' }]}>
+                {onboardingData.aadhaarBackUploaded ? '✅' : '📄'}
+              </Text>
+              <Text style={[styles.uploadText, onboardingData.aadhaarBackUploaded && { color: '#065F46' }]}>
+                {onboardingData.aadhaarBackUploaded ? 'aadhaar_back.jpg' : 'Aadhaar Back'} <Text style={styles.asterisk}>*</Text>
+              </Text>
+              <Text style={styles.uploadSubtext}>{onboardingData.aadhaarBackUploaded ? 'Uploaded' : 'Upload'}</Text>
             </TouchableOpacity>
           </View>
 
@@ -158,5 +218,29 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 'auto',
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E2E8F0',
+  },
+  dividerText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    paddingHorizontal: 12,
+  },
+  digiButton: {
+    backgroundColor: '#0284C7',
+    shadowColor: '#0284C7',
+    marginBottom: 24,
+  },
+  verifiedButton: {
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
   },
 });

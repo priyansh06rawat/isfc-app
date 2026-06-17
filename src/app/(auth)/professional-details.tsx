@@ -1,25 +1,25 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { TopNav } from '../../components/ui/TopNav';
+import { useAuth } from '../../context/AuthContext';
 
 export default function ProfessionalDetailsScreen() {
-  const [form, setForm] = useState({
-    occupation: '',
-    experience: '',
-    product: '',
-    volume: '',
-  });
+  const { onboardingData, updateOnboardingData } = useAuth();
 
   const handleContinue = () => {
+    if (!onboardingData.experience || !onboardingData.volume) {
+      alert('Please fill in Experience and Sourcing Volume to proceed.');
+      return;
+    }
     router.push('/(auth)/kyc-pan' as any);
   };
 
   const updateForm = (key: string, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    updateOnboardingData({ [key]: value });
   };
 
   return (
@@ -36,7 +36,7 @@ export default function ProfessionalDetailsScreen() {
           <Input
             label="Occupation Type"
             placeholder="e.g. Self Employed / Salaried"
-            value={form.occupation}
+            value={onboardingData.occupation}
             onChangeText={(v) => updateForm('occupation', v)}
           />
 
@@ -44,21 +44,21 @@ export default function ProfessionalDetailsScreen() {
             label="Years of Experience in Loans/Finance"
             placeholder="e.g. 5 Years"
             keyboardType="number-pad"
-            value={form.experience}
+            value={onboardingData.experience}
             onChangeText={(v) => updateForm('experience', v)}
           />
 
           <Input
             label="Primary Product Interest"
             placeholder="e.g. Home Loan, LAP"
-            value={form.product}
+            value={onboardingData.product}
             onChangeText={(v) => updateForm('product', v)}
           />
 
           <Input
             label="Expected Monthly Sourcing Volume"
             placeholder="e.g. ₹50 Lakhs"
-            value={form.volume}
+            value={onboardingData.volume}
             onChangeText={(v) => updateForm('volume', v)}
           />
 

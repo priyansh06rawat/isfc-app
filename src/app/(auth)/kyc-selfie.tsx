@@ -4,9 +4,25 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Button } from '../../components/ui/Button';
 import { TopNav } from '../../components/ui/TopNav';
+import { useAuth } from '../../context/AuthContext';
 
 export default function KycSelfieScreen() {
+  const { onboardingData, updateOnboardingData } = useAuth();
+  const [isCapturing, setIsCapturing] = React.useState(false);
+
+  const handleCapture = () => {
+    setIsCapturing(true);
+    setTimeout(() => {
+      setIsCapturing(false);
+      updateOnboardingData({ isSelfieCaptured: true });
+    }, 1500);
+  };
+
   const handleContinue = () => {
+    if (!onboardingData.isSelfieCaptured) {
+      alert('Please capture live selfie for face match to proceed.');
+      return;
+    }
     router.push('/(auth)/kyc-business' as any);
   };
 
@@ -26,9 +42,16 @@ export default function KycSelfieScreen() {
           </View>
 
           <View style={styles.cameraFrame}>
-            <View style={styles.cameraPlaceholder}>
-              <Text style={styles.cameraIcon}>🤳</Text>
+            <View style={[styles.cameraPlaceholder, onboardingData.isSelfieCaptured && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]}>
+              <Text style={styles.cameraIcon}>
+                {onboardingData.isSelfieCaptured ? '😊' : '👤'}
+              </Text>
             </View>
+            {onboardingData.isSelfieCaptured && (
+              <View style={styles.matchBadge}>
+                <Text style={styles.matchText}>✅ Face Match: 98.4%</Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.instructionsContainer}>
@@ -47,9 +70,12 @@ export default function KycSelfieScreen() {
           </View>
 
           <Button
-            title="📸 Capture Selfie"
-            variant="outline"
-            style={styles.captureButton}
+            title={onboardingData.isSelfieCaptured ? "✅ Selfie Captured" : "📸 Capture Selfie"}
+            variant={onboardingData.isSelfieCaptured ? "primary" : "outline"}
+            style={[styles.captureButton, onboardingData.isSelfieCaptured && styles.verifiedButton]}
+            isLoading={isCapturing}
+            onPress={handleCapture}
+            disabled={onboardingData.isSelfieCaptured}
           />
 
           <Button
@@ -139,5 +165,23 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 'auto',
+  },
+  matchBadge: {
+    marginTop: 12,
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#D1FAE5',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+  },
+  matchText: {
+    fontSize: 13,
+    color: '#059669',
+    fontWeight: '700',
+  },
+  verifiedButton: {
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
   },
 });

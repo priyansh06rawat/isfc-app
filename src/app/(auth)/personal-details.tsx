@@ -1,29 +1,26 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { TopNav } from '../../components/ui/TopNav';
+import { useAuth } from '../../context/AuthContext';
 
 export default function PersonalDetailsScreen() {
-  const [form, setForm] = useState({
-    fullName: '',
-    dob: '',
-    gender: '',
-    email: '',
-    address: '',
-    city: '',
-    pin: '',
-    state: '',
-  });
+  const { onboardingData, updateOnboardingData } = useAuth();
 
   const handleContinue = () => {
+    // Basic validation: name, email, city are good to check
+    if (!onboardingData.fullName || !onboardingData.email || !onboardingData.city) {
+      alert('Please fill in Name, Email, and City to proceed.');
+      return;
+    }
     router.push('/(auth)/professional-details' as any);
   };
 
   const updateForm = (key: string, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    updateOnboardingData({ [key]: value });
   };
 
   return (
@@ -40,7 +37,7 @@ export default function PersonalDetailsScreen() {
           <Input
             label="Full Name (As per PAN)"
             placeholder="e.g. Rahul Sharma"
-            value={form.fullName}
+            value={onboardingData.fullName}
             onChangeText={(v) => updateForm('fullName', v)}
           />
 
@@ -49,7 +46,7 @@ export default function PersonalDetailsScreen() {
               <Input
                 label="Date of Birth"
                 placeholder="DD/MM/YYYY"
-                value={form.dob}
+                value={onboardingData.dob}
                 onChangeText={(v) => updateForm('dob', v)}
               />
             </View>
@@ -58,7 +55,7 @@ export default function PersonalDetailsScreen() {
               <Input
                 label="Gender"
                 placeholder="Select..."
-                value={form.gender}
+                value={onboardingData.gender}
                 onChangeText={(v) => updateForm('gender', v)}
               />
             </View>
@@ -68,14 +65,14 @@ export default function PersonalDetailsScreen() {
             label="Email Address"
             placeholder="e.g. rahul@example.com"
             keyboardType="email-address"
-            value={form.email}
+            value={onboardingData.email}
             onChangeText={(v) => updateForm('email', v)}
           />
 
           <Input
             label="Permanent Address"
             placeholder="House/Flat No., Street, Area"
-            value={form.address}
+            value={onboardingData.address}
             onChangeText={(v) => updateForm('address', v)}
           />
 
@@ -84,7 +81,7 @@ export default function PersonalDetailsScreen() {
               <Input
                 label="City"
                 placeholder="e.g. Mumbai"
-                value={form.city}
+                value={onboardingData.city}
                 onChangeText={(v) => updateForm('city', v)}
               />
             </View>
@@ -94,7 +91,7 @@ export default function PersonalDetailsScreen() {
                 label="PIN Code"
                 placeholder="e.g. 400001"
                 keyboardType="number-pad"
-                value={form.pin}
+                value={onboardingData.pin}
                 onChangeText={(v) => updateForm('pin', v)}
               />
             </View>
@@ -103,7 +100,7 @@ export default function PersonalDetailsScreen() {
           <Input
             label="State"
             placeholder="e.g. Maharashtra"
-            value={form.state}
+            value={onboardingData.state}
             onChangeText={(v) => updateForm('state', v)}
           />
 

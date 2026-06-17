@@ -5,22 +5,41 @@ import { router } from 'expo-router';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { TopNav } from '../../components/ui/TopNav';
+import { useAuth } from '../../context/AuthContext';
 
 export default function KycPanScreen() {
-  const [pan, setPan] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
+  const { onboardingData, updateOnboardingData } = useAuth();
+  const [isVerifying, setIsVerifying] = React.useState(false);
 
   const handleVerify = () => {
-    if (pan.length !== 10) return;
+    if (onboardingData.pan.length !== 10) return;
     setIsVerifying(true);
     setTimeout(() => {
       setIsVerifying(false);
-      setIsVerified(true);
+      updateOnboardingData({ isPanVerified: true });
     }, 1500);
   };
 
+  const handleDigiLocker = () => {
+    setIsVerifying(true);
+    setTimeout(() => {
+      setIsVerifying(false);
+      updateOnboardingData({
+        isPanVerified: true,
+        pan: 'ABCDE1234F',
+      });
+    }, 1500);
+  };
+
+  const handleUpload = () => {
+    updateOnboardingData({ panUploaded: true });
+  };
+
   const handleContinue = () => {
+    if (!onboardingData.isPanVerified && !onboardingData.panUploaded) {
+      alert('Please verify PAN or upload PAN card to proceed.');
+      return;
+    }
     router.push('/(auth)/kyc-aadhaar' as any);
   };
 
@@ -44,21 +63,20 @@ export default function KycPanScreen() {
             placeholder="ABCDE1234F"
             autoCapitalize="characters"
             maxLength={10}
-            value={pan}
+            value={onboardingData.pan}
             onChangeText={(text) => {
-              setPan(text);
-              setIsVerified(false);
+              updateOnboardingData({ pan: text, isPanVerified: false });
             }}
             required
           />
 
           <Button
-            title={isVerified ? "✅ Verified" : "Verify via NSDL"}
-            variant={isVerified ? "primary" : "outline"}
-            style={[styles.verifyButton, isVerified && styles.verifiedButton]}
-            isLoading={isVerifying}
+            title={onboardingData.isPanVerified ? "✅ Verified" : "Verify via NSDL"}
+            variant={onboardingData.isPanVerified ? "primary" : "outline"}
+            style={[styles.verifyButton, onboardingData.isPanVerified && styles.verifiedButton]}
+            isLoading={isVerifying && !onboardingData.pan}
             onPress={handleVerify}
-            disabled={pan.length !== 10 || isVerified}
+            disabled={onboardingData.pan.length !== 10 || onboardingData.isPanVerified}
           />
 
           <View style={styles.dividerContainer}>
@@ -68,16 +86,29 @@ export default function KycPanScreen() {
           </View>
 
           <Button
-            title="🏛️ Fetch from DigiLocker"
+            title={onboardingData.isPanVerified && onboardingData.pan === 'ABCDE1234F' ? "✅ Fetched via DigiLocker" : "🏛️ Fetch from DigiLocker"}
             variant="primary"
-            style={styles.digiButton}
+            style={[styles.digiButton, onboardingData.isPanVerified && onboardingData.pan === 'ABCDE1234F' && styles.verifiedButton]}
+            isLoading={isVerifying && !onboardingData.isPanVerified}
+            onPress={handleDigiLocker}
+            disabled={onboardingData.isPanVerified}
           />
 
-          <Text style={styles.uploadLabel}>Upload PAN Image (Optional)</Text>
-          <TouchableOpacity style={styles.uploadBox}>
-            <Text style={styles.uploadIcon}>📷</Text>
-            <Text style={styles.uploadText}>Tap to upload or take a photo</Text>
-            <Text style={styles.uploadSubtext}>Max size 5MB (JPG, PNG, PDF)</Text>
+          <Text style={styles.uploadLabel}>Upload PAN Image * (Optional if verified)</Text>
+          <TouchableOpacity style={[styles.uploadBox, onboardingData.panUploaded && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} onPress={handleUpload}>
+            {onboardingData.panUploaded ? (
+              <>
+                <Text style={[styles.uploadIcon, { color: '#10B981' }]}>✅</Text>
+                <Text style={[styles.uploadText, { color: '#065F46' }]}>pan_card.jpg Uploaded</Text>
+                <Text style={styles.uploadSubtext}>Tap to change photo</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.uploadIcon}>📷</Text>
+                <Text style={styles.uploadText}>Tap to upload or take a photo</Text>
+                <Text style={styles.uploadSubtext}>Max size 5MB (JPG, PNG, PDF)</Text>
+              </>
+            )}
           </TouchableOpacity>
 
           <Button

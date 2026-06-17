@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Button } from '../../components/ui/Button';
 import { TopNav } from '../../components/ui/TopNav';
+import { useAuth } from '../../context/AuthContext';
 
 const PARTNERS = [
   {
@@ -37,7 +38,12 @@ const PARTNERS = [
 ];
 
 export default function PartnerTypeScreen() {
-  const [selected, setSelected] = useState<string | null>(null);
+  const { onboardingData, updateOnboardingData } = useAuth();
+  const selected = onboardingData.partnerType;
+
+  const setSelected = (type: string | null) => {
+    updateOnboardingData({ partnerType: type });
+  };
 
   const handleContinue = () => {
     if (selected) {

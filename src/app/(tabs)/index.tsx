@@ -1,11 +1,60 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Platform, Alert } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { router } from 'expo-router';
 
 export default function DashboardScreen() {
-  const { logout } = useAuth();
-  const [showNotificationPrompt, setShowNotificationPrompt] = useState(true);
+  const { 
+    logout, 
+    leads, 
+    onboardingData, 
+    notificationsEnabled, 
+    setNotificationsEnabled 
+  } = useAuth();
+
+  const [hideBanner, setHideBanner] = React.useState(false);
+
+  const handleEnableNotifications = () => {
+    setNotificationsEnabled(true);
+    Alert.alert('Notifications Enabled', 'You will now receive instant push updates on your lead statuses!');
+    setHideBanner(true);
+  };
+
+  const handleRecentLeadPress = (id: string) => {
+    router.push({
+      pathname: '/(tabs)/lead/[id]',
+      params: { id }
+    } as any);
+  };
+
+  const showRecentLeads = leads.slice(0, 5);
+
+  const getStatusStyle = (status: string) => {
+    const s = status.toLowerCase();
+    if (s === 'approved' || s === 'sanctioned') return styles.badgeSuccess;
+    if (s === 'disbursed') return styles.badgeBlue;
+    if (s === 'pending') return styles.badgeWarning;
+    if (s === 'rejected') return styles.badgeDanger;
+    return styles.badgeWarning; // processing / other
+  };
+
+  const getStatusText = (status: string) => {
+    const s = status.toLowerCase();
+    if (s === 'approved' || s === 'sanctioned') return 'Sanctioned';
+    if (s === 'disbursed') return 'Disbursed';
+    if (s === 'pending') return 'Pending';
+    if (s === 'rejected') return 'Rejected';
+    return 'Processing';
+  };
+
+  const getStatusTextStyle = (status: string) => {
+    const s = status.toLowerCase();
+    if (s === 'approved' || s === 'sanctioned') return styles.badgeSuccessText;
+    if (s === 'disbursed') return styles.badgeBlueText;
+    if (s === 'pending') return styles.badgeWarningText;
+    if (s === 'rejected') return styles.badgeDangerText;
+    return styles.badgeWarningText;
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -14,10 +63,10 @@ export default function DashboardScreen() {
         <View style={styles.hero}>
           <View style={styles.heroHeader}>
             <View>
-              <Text style={styles.greeting}>Good Evening, <Text style={styles.greetingHighlight}>Rajesh!</Text> 👋</Text>
+              <Text style={styles.greeting}>Good Evening, <Text style={styles.greetingHighlight}>{onboardingData.fullName || 'Rajesh'}!</Text> 👋</Text>
               <Text style={styles.greetingSub}>DSA Partner · Code: DSA-08421</Text>
             </View>
-            <TouchableOpacity onPress={logout} style={styles.avatar}>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/profile' as any)} style={styles.avatar}>
               <Text style={styles.avatarText}>RK</Text>
             </TouchableOpacity>
           </View>
@@ -32,7 +81,7 @@ export default function DashboardScreen() {
           </View>
 
           {/* Push Notification Banner */}
-          {showNotificationPrompt && (
+          {!notificationsEnabled && !hideBanner && (
             <View style={styles.notificationBanner}>
               <View style={styles.notificationBannerContent}>
                 <Text style={styles.notificationIcon}>🔔</Text>
@@ -42,10 +91,10 @@ export default function DashboardScreen() {
                 </View>
               </View>
               <View style={styles.notificationActions}>
-                <TouchableOpacity onPress={() => setShowNotificationPrompt(false)}>
+                <TouchableOpacity onPress={() => setHideBanner(true)}>
                   <Text style={styles.notificationDismiss}>Later</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.notificationEnableBtn} onPress={() => setShowNotificationPrompt(false)}>
+                <TouchableOpacity style={styles.notificationEnableBtn} onPress={handleEnableNotifications}>
                   <Text style={styles.notificationEnableText}>Enable Now</Text>
                 </TouchableOpacity>
               </View>
@@ -55,7 +104,7 @@ export default function DashboardScreen() {
           {/* Stats Row */}
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
-              <Text style={[styles.statValue, { color: '#DE1F26' }]}>28</Text>
+              <Text style={[styles.statValue, { color: '#DE1F26' }]}>{leads.length}</Text>
               <Text style={styles.statLabel}>Leads</Text>
             </View>
             <View style={styles.statBox}>
@@ -73,7 +122,7 @@ export default function DashboardScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActionsGrid}>
-            <TouchableOpacity style={styles.actionBtn}>
+            <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(tabs)/new-lead' as any)}>
               <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(108,99,255,0.15)' }]}>
                 <Text style={styles.actionIcon}>➕</Text>
               </View>
@@ -94,7 +143,7 @@ export default function DashboardScreen() {
               <Text style={styles.actionLabel}>Payouts</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionBtn}>
+            <TouchableOpacity style={styles.actionBtn} onPress={() => Alert.alert('Desktop Admin', 'Opening India Shelter Admin Dashboard view...')}>
               <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(255,184,48,0.12)' }]}>
                 <Text style={styles.actionIcon}>🖥️</Text>
               </View>
@@ -140,38 +189,30 @@ export default function DashboardScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.leadCard}>
-            <View style={styles.leadHeader}>
-              <Text style={styles.leadName}>Anita Desai</Text>
-              <View style={styles.badgeSuccess}>
-                <Text style={styles.badgeSuccessText}>Sanctioned</Text>
+          {showRecentLeads.map((lead) => (
+            <TouchableOpacity 
+              key={lead.id} 
+              style={styles.leadCard} 
+              onPress={() => handleRecentLeadPress(lead.id)}
+            >
+              <View style={styles.leadHeader}>
+                <Text style={styles.leadName}>{lead.name}</Text>
+                <View style={getStatusStyle(lead.status)}>
+                  <Text style={getStatusTextStyle(lead.status)}>{getStatusText(lead.status)}</Text>
+                </View>
               </View>
-            </View>
-            <View style={styles.leadDetailsRow}>
-              <Text style={styles.leadDetailText}>L-2844</Text>
-              <Text style={styles.leadDetailText}>·</Text>
-              <Text style={styles.leadDetailText}>₹68 Lakhs</Text>
-              <Text style={styles.leadDetailText}>·</Text>
-              <Text style={styles.leadDetailText}>Home Loan</Text>
-            </View>
-          </View>
-
-          <View style={styles.leadCard}>
-            <View style={styles.leadHeader}>
-              <Text style={styles.leadName}>Rahul Verma</Text>
-              <View style={styles.badgeWarning}>
-                <Text style={styles.badgeWarningText}>In Progress</Text>
+              <View style={styles.leadDetailsRow}>
+                <Text style={styles.leadDetailText}>{lead.id}</Text>
+                <Text style={styles.leadDetailText}>·</Text>
+                <Text style={styles.leadDetailText}>{lead.amount}</Text>
+                <Text style={styles.leadDetailText}>·</Text>
+                <Text style={styles.leadDetailText}>{lead.product}</Text>
               </View>
-            </View>
-            <View style={styles.leadDetailsRow}>
-              <Text style={styles.leadDetailText}>L-2845</Text>
-              <Text style={styles.leadDetailText}>·</Text>
-              <Text style={styles.leadDetailText}>₹25 Lakhs</Text>
-              <Text style={styles.leadDetailText}>·</Text>
-              <Text style={styles.leadDetailText}>LAP</Text>
-            </View>
-          </View>
+            </TouchableOpacity>
+          ))}
         </View>
+        
+        <View style={{ height: 60 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -462,6 +503,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#059669',
   },
+  badgeBlue: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  badgeBlueText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#2563EB',
+  },
   badgeWarning: {
     backgroundColor: '#FFFBEB',
     paddingHorizontal: 8,
@@ -474,6 +528,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#D97706',
+  },
+  badgeDanger: {
+    backgroundColor: '#FEF2F2',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
+  },
+  badgeDangerText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#DC2626',
   },
   leadDetailsRow: {
     flexDirection: 'row',

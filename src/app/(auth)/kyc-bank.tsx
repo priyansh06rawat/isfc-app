@@ -5,32 +5,39 @@ import { router } from 'expo-router';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { TopNav } from '../../components/ui/TopNav';
+import { useAuth } from '../../context/AuthContext';
 
 export default function KycBankScreen() {
-  const [form, setForm] = useState({
-    accName: '',
-    accNumber: '',
-    ifsc: '',
-    accType: '',
-  });
+  const { onboardingData, updateOnboardingData } = useAuth();
   const [isVerifying, setIsVerifying] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
 
   const handleVerify = () => {
-    if (!form.accNumber || !form.ifsc) return;
+    if (!onboardingData.accNumber || !onboardingData.ifsc) return;
     setIsVerifying(true);
     setTimeout(() => {
       setIsVerifying(false);
-      setIsVerified(true);
+      updateOnboardingData({ isBankVerified: true });
     }, 1500);
   };
 
+  const handleUpload = () => {
+    updateOnboardingData({ bankDocUploaded: true });
+  };
+
   const handleContinue = () => {
+    if (!onboardingData.accName || !onboardingData.accNumber || !onboardingData.ifsc) {
+      alert('Please fill in Account Name, Account Number, and IFSC.');
+      return;
+    }
+    if (!onboardingData.isBankVerified && !onboardingData.bankDocUploaded) {
+      alert('Please verify bank via Penny Drop or upload Bank Statement to proceed.');
+      return;
+    }
     router.push('/(auth)/kyc-agreement' as any);
   };
 
   const updateForm = (key: string, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    updateOnboardingData({ [key]: value });
   };
 
   return (
@@ -51,8 +58,8 @@ export default function KycBankScreen() {
           <Input
             label="Account Holder Name"
             placeholder="As per bank records"
-            value={form.accName}
-            onChangeText={(v) => { updateForm('accName', v); setIsVerified(false); }}
+            value={onboardingData.accName}
+            onChangeText={(v) => { updateForm('accName', v); updateOnboardingData({ isBankVerified: false }); }}
             required
           />
 
@@ -60,8 +67,8 @@ export default function KycBankScreen() {
             label="Account Number"
             placeholder="Enter account number"
             keyboardType="number-pad"
-            value={form.accNumber}
-            onChangeText={(v) => { updateForm('accNumber', v); setIsVerified(false); }}
+            value={onboardingData.accNumber}
+            onChangeText={(v) => { updateForm('accNumber', v); updateOnboardingData({ isBankVerified: false }); }}
             required
           />
 
@@ -70,32 +77,45 @@ export default function KycBankScreen() {
             placeholder="e.g. HDFC0001234"
             autoCapitalize="characters"
             maxLength={11}
-            value={form.ifsc}
-            onChangeText={(v) => { updateForm('ifsc', v); setIsVerified(false); }}
+            value={onboardingData.ifsc}
+            onChangeText={(v) => { updateForm('ifsc', v); updateOnboardingData({ isBankVerified: false }); }}
             required
           />
 
           <Input
             label="Account Type"
             placeholder="e.g. Savings / Current"
-            value={form.accType}
+            value={onboardingData.accType}
             onChangeText={(v) => updateForm('accType', v)}
           />
 
           <Button
-            title={isVerified ? "✅ Bank Verified" : "₹1 Penny Drop Verification"}
-            variant={isVerified ? "primary" : "outline"}
-            style={[styles.verifyButton, isVerified && styles.verifiedButton]}
+            title={onboardingData.isBankVerified ? "✅ Bank Verified" : "₹1 Penny Drop Verification"}
+            variant={onboardingData.isBankVerified ? "primary" : "outline"}
+            style={[styles.verifyButton, onboardingData.isBankVerified && styles.verifiedButton]}
             isLoading={isVerifying}
             onPress={handleVerify}
-            disabled={!form.accNumber || !form.ifsc || isVerified}
+            disabled={!onboardingData.accNumber || !onboardingData.ifsc || onboardingData.isBankVerified}
           />
 
           <Text style={styles.uploadLabel}>Upload Cancelled Cheque / Statement</Text>
-          <TouchableOpacity style={styles.uploadBox}>
-            <Text style={styles.uploadIcon}>🏦</Text>
-            <Text style={styles.uploadText}>Tap to upload</Text>
-            <Text style={styles.uploadSubtext}>Must clearly show Name, A/C No and IFSC</Text>
+          <TouchableOpacity 
+            style={[styles.uploadBox, onboardingData.bankDocUploaded && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} 
+            onPress={handleUpload}
+          >
+            {onboardingData.bankDocUploaded ? (
+              <>
+                <Text style={[styles.uploadIcon, { color: '#10B981' }]}>✅</Text>
+                <Text style={[styles.uploadText, { color: '#065F46' }]}>cancelled_cheque.pdf Uploaded</Text>
+                <Text style={styles.uploadSubtext}>Tap to change file</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.uploadIcon}>🏦</Text>
+                <Text style={styles.uploadText}>Tap to upload</Text>
+                <Text style={styles.uploadSubtext}>Must clearly show Name, A/C No and IFSC</Text>
+              </>
+            )}
           </TouchableOpacity>
 
           <Button

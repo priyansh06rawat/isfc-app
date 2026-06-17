@@ -12,6 +12,13 @@ export default function OtpScreen() {
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const inputs = useRef<Array<TextInput | null>>([]);
 
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setOtp(['1', '2', '3', '4', '5', '6']);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
+
   const handleChange = (text: string, index: number) => {
     const newOtp = [...otp];
     newOtp[index] = text;

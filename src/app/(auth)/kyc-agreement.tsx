@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Button } from '../../components/ui/Button';
@@ -7,16 +7,52 @@ import { TopNav } from '../../components/ui/TopNav';
 import { useAuth } from '../../context/AuthContext';
 
 export default function KycAgreementScreen() {
-  const { verifyOtp } = useAuth();
-  const [agreed, setAgreed] = useState(false);
+  const { onboardingData, updateOnboardingData } = useAuth();
+  
+  // Three separate agreement checklists
+  const [agreed1, setAgreed1] = useState(false);
+  const [agreed2, setAgreed2] = useState(false);
+  const [agreed3, setAgreed3] = useState(false);
 
-  const handleSubmit = () => {
-    if (agreed) {
-      // Complete onboarding and authenticate
-      verifyOtp();
-      router.replace('/(tabs)');
+  // Digital Signature coordinates
+  const [sigPoints, setSigPoints] = useState<{ x: number; y: number }[]>([]);
+
+  const handleTouch = (event: any) => {
+    const { locationX, locationY } = event.nativeEvent;
+    if (locationX && locationY) {
+      setSigPoints((prev) => [...prev, { x: locationX, y: locationY }]);
     }
   };
+
+  const clearSignature = () => {
+    setSigPoints([]);
+  };
+
+  const handleUploadCert = () => {
+    updateOnboardingData({ dsaCertificateUploaded: true });
+  };
+
+  const handleSubmit = () => {
+    const isSigned = sigPoints.length >= 10;
+    if (!agreed1 || !agreed2 || !agreed3) {
+      Alert.alert('Agreement Required', 'Please accept all terms and conditions.');
+      return;
+    }
+    if (!onboardingData.dsaCertificateUploaded) {
+      Alert.alert('Upload Required', 'Please upload your DSA Certificate (Other Party) to proceed.');
+      return;
+    }
+    if (!isSigned) {
+      Alert.alert('Signature Required', 'Please sign in the box before submitting.');
+      return;
+    }
+
+    // Save state and route to Review page
+    updateOnboardingData({ isAgreementSigned: true });
+    router.push('/(auth)/review' as any);
+  };
+
+  const isFormValid = agreed1 && agreed2 && agreed3 && onboardingData.dsaCertificateUploaded && sigPoints.length >= 10;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -32,47 +68,120 @@ export default function KycAgreementScreen() {
           <Text style={styles.subtitle}>Review and sign the partnership agreement</Text>
         </View>
 
-        <View style={styles.documentBox}>
-          <Text style={styles.docIcon}>📄</Text>
-          <View style={styles.docInfo}>
-            <Text style={styles.docTitle}>India_Shelter_DSA_Agreement.pdf</Text>
-            <Text style={styles.docSize}>2.4 MB</Text>
-          </View>
-          <TouchableOpacity style={styles.downloadButton}>
-            <Text style={styles.downloadIcon}>⬇️</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.uploadLabel}>Upload Signed Agreement</Text>
-        <TouchableOpacity style={styles.uploadBox}>
-          <Text style={styles.uploadIcon}>✍️</Text>
-          <Text style={styles.uploadText}>Tap to upload signed copy</Text>
-          <Text style={styles.uploadSubtext}>Or sign digitally via Aadhaar eSign</Text>
+        {/* DSA Certificate Upload Section */}
+        <Text style={styles.sectionTitle}>DSA Certificate (Other Party) *</Text>
+        <TouchableOpacity 
+          style={[styles.uploadBox, onboardingData.dsaCertificateUploaded && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} 
+          onPress={handleUploadCert}
+        >
+          {onboardingData.dsaCertificateUploaded ? (
+            <>
+              <Text style={[styles.uploadIcon, { color: '#10B981' }]}>✅</Text>
+              <Text style={[styles.uploadText, { color: '#065F46' }]}>dsa_certificate.pdf Uploaded</Text>
+              <Text style={styles.uploadSubtext}>Tap to change file</Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.uploadIcon}>📜</Text>
+              <Text style={styles.uploadText}>Upload DSA Certificate</Text>
+              <Text style={styles.uploadSubtext}>JPG, PNG or PDF · Max 5MB</Text>
+            </>
+          )}
         </TouchableOpacity>
 
-        <Button
-          title="🔐 E-Sign with Aadhaar"
-          variant="outline"
-          style={styles.esignButton}
-        />
+        {/* Agreement Text Preview */}
+        <View style={styles.agreementPreview}>
+          <Text style={styles.agreementTitle}>DSA EMPANELMENT AGREEMENT</Text>
+          <Text style={styles.agreementBody}>
+            This DSA Empanelment Agreement ("Agreement") is entered into between India Shelter Finance Corporation Limited, a company incorporated under the Companies Act, 2013, having its registered office at Gurugram, Haryana ("NHB/NBFC") and the applicant ("DSA/Partner").{"\n\n"}
+            1. Appointment: The NBFC hereby appoints the DSA as a non-exclusive Direct Selling Agent for sourcing loan applications and financial products offered by the NBFC.{"\n\n"}
+            2. Scope of Work: The DSA shall source loan applications from prospective customers, assist in documentation, and coordinate with the NBFC's credit team for processing.{"\n\n"}
+            3. Commission Structure: Commission rates shall be as per the commission schedule annexed hereto, payable on disbursement subject to first EMI clearance.{"\n\n"}
+            4. Compliance: The DSA shall comply with all applicable laws, RBI guidelines, and the NBFC's internal policies including KYC/AML norms.{"\n\n"}
+            5. Term: This agreement is valid for 1 year from the date of execution, auto-renewable on mutually agreed terms.
+          </Text>
+        </View>
 
+        {/* Checkbox 1 */}
         <TouchableOpacity 
           style={styles.checkboxContainer} 
-          onPress={() => setAgreed(!agreed)}
+          onPress={() => setAgreed1(!agreed1)}
           activeOpacity={0.7}
         >
-          <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
-            {agreed && <Text style={styles.checkmark}>✓</Text>}
+          <View style={[styles.checkbox, agreed1 && styles.checkboxChecked]}>
+            {agreed1 && <Text style={styles.checkmark}>✓</Text>}
           </View>
           <Text style={styles.checkboxText}>
-            I have read and agree to all the terms & conditions mentioned in the agreement. I confirm that the information provided is correct.
+            I have read, understood, and agree to the DSA Empanelment Agreement and all its terms & conditions *
           </Text>
         </TouchableOpacity>
 
+        {/* Checkbox 2 */}
+        <TouchableOpacity 
+          style={styles.checkboxContainer} 
+          onPress={() => setAgreed2(!agreed2)}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.checkbox, agreed2 && styles.checkboxChecked]}>
+            {agreed2 && <Text style={styles.checkmark}>✓</Text>}
+          </View>
+          <Text style={styles.checkboxText}>
+            I confirm that all documents uploaded are genuine and I consent to CIBIL/KYC verification *
+          </Text>
+        </TouchableOpacity>
+
+        {/* Checkbox 3 */}
+        <TouchableOpacity 
+          style={styles.checkboxContainer} 
+          onPress={() => setAgreed3(!agreed3)}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.checkbox, agreed3 && styles.checkboxChecked]}>
+            {agreed3 && <Text style={styles.checkmark}>✓</Text>}
+          </View>
+          <Text style={styles.checkboxText}>
+            I agree to comply with RBI guidelines, PMLA 2002, and DPDP Act 2023 in all my activities as DSA *
+          </Text>
+        </TouchableOpacity>
+
+        {/* E-Signature Box */}
+        <Text style={styles.sectionTitle}>E-Signature (Draw in box below) *</Text>
+        <View 
+          style={styles.sigPad}
+          onTouchStart={handleTouch}
+          onTouchMove={handleTouch}
+        >
+          {sigPoints.length === 0 ? (
+            <View style={styles.sigPlaceholder}>
+              <Text style={styles.sigPlaceholderIcon}>✍️</Text>
+              <Text style={styles.sigPlaceholderText}>Draw your signature here</Text>
+            </View>
+          ) : (
+            sigPoints.map((p, i) => (
+              <View
+                key={i}
+                style={{
+                  position: 'absolute',
+                  left: p.x,
+                  top: p.y,
+                  width: 3,
+                  height: 3,
+                  borderRadius: 1.5,
+                  backgroundColor: '#DE1F26',
+                }}
+              />
+            ))
+          )}
+        </View>
+
+        <TouchableOpacity onPress={clearSignature} style={styles.clearBtn} activeOpacity={0.6}>
+          <Text style={styles.clearBtnText}>✕ Clear Signature</Text>
+        </TouchableOpacity>
+
         <Button
-          title="Submit Application 🎉"
+          title="Submit & Review Application →"
           onPress={handleSubmit}
-          disabled={!agreed}
+          disabled={!isFormValid}
           style={styles.button}
         />
       </ScrollView>
@@ -114,77 +223,62 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#64748B',
   },
-  documentBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#F8F9FA',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
-    marginBottom: 32,
-  },
-  docIcon: {
-    fontSize: 24,
-    marginRight: 12,
-  },
-  docInfo: {
-    flex: 1,
-  },
-  docTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2D3134',
-    marginBottom: 2,
-  },
-  docSize: {
-    fontSize: 12,
-    color: '#64748B',
-  },
-  downloadButton: {
-    padding: 8,
-  },
-  downloadIcon: {
-    fontSize: 20,
-  },
-  uploadLabel: {
+  sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
     color: '#2D3134',
     marginBottom: 8,
+    marginTop: 16,
   },
   uploadBox: {
     borderWidth: 1.5,
     borderStyle: 'dashed',
     borderColor: '#CBD5E1',
     borderRadius: 12,
-    padding: 24,
+    padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#F8F9FA',
     marginBottom: 16,
   },
   uploadIcon: {
-    fontSize: 32,
-    marginBottom: 12,
+    fontSize: 28,
+    marginBottom: 8,
   },
   uploadText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#475569',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   uploadSubtext: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#94A3B8',
   },
-  esignButton: {
-    marginBottom: 32,
+  agreementPreview: {
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    padding: 16,
+    height: 180,
+    marginBottom: 20,
+  },
+  agreementTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#2D3134',
+    marginBottom: 8,
+  },
+  agreementBody: {
+    fontSize: 11,
+    color: '#64748B',
+    lineHeight: 16,
   },
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 32,
+    marginBottom: 16,
   },
   checkbox: {
     width: 20,
@@ -212,7 +306,43 @@ const styles = StyleSheet.create({
     color: '#475569',
     lineHeight: 18,
   },
+  sigPad: {
+    height: 150,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 12,
+    backgroundColor: '#FAFAFA',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  sigPlaceholder: {
+    position: 'absolute',
+    inset: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sigPlaceholderIcon: {
+    fontSize: 28,
+    marginBottom: 6,
+    color: '#94A3B8',
+  },
+  sigPlaceholderText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontWeight: '500',
+  },
+  clearBtn: {
+    alignSelf: 'flex-end',
+    padding: 8,
+    marginBottom: 24,
+  },
+  clearBtnText: {
+    fontSize: 12,
+    color: '#EF4444',
+    fontWeight: '600',
+  },
   button: {
-    marginTop: 'auto',
+    marginTop: 8,
+    marginBottom: 32,
   },
 });
