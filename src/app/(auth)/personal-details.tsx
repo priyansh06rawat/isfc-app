@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text, Animated } from 'react-native';
+import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text, Animated, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Button } from '../../components/ui/Button';
@@ -42,6 +42,22 @@ export default function PersonalDetailsScreen() {
     updateOnboardingData({ [key]: value });
   };
 
+  const handleDobChange = (text: string) => {
+    const isAdding = text.length > (onboardingData.dob || '').length;
+    let cleaned = text.replace(/[^0-9]/g, '');
+    
+    if (isAdding) {
+      if (cleaned.length >= 2 && cleaned.length < 4) {
+        cleaned = `${cleaned.slice(0, 2)}/${cleaned.slice(2)}`;
+      } else if (cleaned.length >= 4) {
+        cleaned = `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}/${cleaned.slice(4, 8)}`;
+      }
+      updateOnboardingData({ dob: cleaned });
+    } else {
+      updateOnboardingData({ dob: text });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <TopNav title="Personal Details" />
@@ -67,17 +83,36 @@ export default function PersonalDetailsScreen() {
                   label="Date of Birth"
                   placeholder="DD/MM/YYYY"
                   value={onboardingData.dob}
-                  onChangeText={(v) => updateForm('dob', v)}
+                  onChangeText={handleDobChange}
+                  maxLength={10}
+                  keyboardType="number-pad"
                 />
               </View>
               <View style={{ width: 16 }} />
               <View style={styles.flex1}>
-                <Input
-                  label="Gender"
-                  placeholder="Select..."
-                  value={onboardingData.gender}
-                  onChangeText={(v) => updateForm('gender', v)}
-                />
+                <Text style={styles.genderLabel}>Gender</Text>
+                <View style={styles.genderContainer}>
+                  {['Male', 'Female'].map((g) => {
+                    const isSelected = onboardingData.gender === g;
+                    return (
+                      <TouchableOpacity
+                        key={g}
+                        style={[
+                          styles.genderPill,
+                          isSelected && styles.genderPillActive
+                        ]}
+                        onPress={() => updateForm('gender', g)}
+                      >
+                        <Text style={[
+                          styles.genderPillText,
+                          isSelected && styles.genderPillTextActive
+                        ]}>
+                          {g}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
             </View>
 
@@ -167,5 +202,42 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 16,
     marginBottom: 24,
+  },
+  genderLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#475569',
+    marginBottom: 8,
+  },
+  genderContainer: {
+    flexDirection: 'row',
+    height: 48,
+    borderRadius: 10,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    padding: 3,
+  },
+  genderPill: {
+    flex: 1,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  genderPillActive: {
+    backgroundColor: '#DE1F26',
+    shadowColor: '#DE1F26',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  genderPillText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  genderPillTextActive: {
+    color: '#FFFFFF',
   },
 });

@@ -1,17 +1,27 @@
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 
 function RootLayoutNav() {
-  const { isLoading } = useAuth();
+  const { isLoading, isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (!isLoading) {
       SplashScreen.hideAsync();
     }
   }, [isLoading]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (isAuthenticated) {
+        router.replace('/(tabs)');
+      } else {
+        router.replace('/(auth)/login' as any);
+      }
+    }
+  }, [isLoading, isAuthenticated]);
 
   if (isLoading) {
     return null;

@@ -4,6 +4,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { router } from 'expo-router';
+import { TouchableScale } from '../../components/ui/TouchableScale';
 
 const FILTERS = ['All', 'Processing', 'Approved', 'Pending', 'Disbursed', 'Rejected'];
 
@@ -17,6 +18,7 @@ export default function LeadsScreen() {
   // Animation hooks
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(15)).current;
+  const listOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -32,6 +34,27 @@ export default function LeadsScreen() {
       })
     ]).start();
   }, []);
+
+  const getFilterCount = (filter: string) => {
+    if (filter === 'All') return leads.length;
+    return leads.filter(l => l.status.toLowerCase() === filter.toLowerCase()).length;
+  };
+
+  const handleFilterChange = (filter: string) => {
+    if (filter === activeFilter) return;
+    Animated.timing(listOpacity, {
+      toValue: 0.15,
+      duration: 120,
+      useNativeDriver: true,
+    }).start(() => {
+      setActiveFilter(filter);
+      Animated.timing(listOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
 
   const handleLeadPress = (id: string) => {
     router.push({
@@ -97,70 +120,73 @@ export default function LeadsScreen() {
           >
             {FILTERS.map((f) => {
               const isActive = activeFilter === f;
+              const count = getFilterCount(f);
               return (
-                <TouchableOpacity 
+                <TouchableScale 
                   key={f} 
                   style={[styles.filterChip, isActive && styles.filterChipActive]}
-                  onPress={() => setActiveFilter(f)}
+                  onPress={() => handleFilterChange(f)}
                 >
-                  <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>{f}</Text>
-                </TouchableOpacity>
+                  <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>
+                    {f} ({count})
+                  </Text>
+                </TouchableScale>
               );
             })}
           </ScrollView>
         </View>
 
-        {/* Leads List */}
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {filteredLeads.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <MaterialCommunityIcons name="database-search-outline" size={48} color="#94A3B8" style={{ marginBottom: 12 }} />
-              <Text style={styles.emptyTitle}>No leads found</Text>
-              <Text style={styles.emptySub}>Try a different search or filter option</Text>
-            </View>
-          ) : (
-            filteredLeads.map((lead) => {
-              const status = getStatusStyle(lead.status);
-              const initials = lead.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+        {/* Leads List with Fade Transition */}
+        <Animated.View style={{ flex: 1, opacity: listOpacity }}>
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            {filteredLeads.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <MaterialCommunityIcons name="database-search-outline" size={48} color="#94A3B8" style={{ marginBottom: 12 }} />
+                <Text style={styles.emptyTitle}>No leads found</Text>
+                <Text style={styles.emptySub}>Try a different search or filter option</Text>
+              </View>
+            ) : (
+              filteredLeads.map((lead) => {
+                const status = getStatusStyle(lead.status);
+                const initials = lead.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
 
-              return (
-                <TouchableOpacity 
-                  key={lead.id} 
-                  style={styles.leadCard}
-                  onPress={() => handleLeadPress(lead.id)}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.leadAvatar, { backgroundColor: lead.color || '#DE1F26' }]}>
-                    <Text style={styles.avatarText}>{initials}</Text>
-                  </View>
-                  <View style={styles.leadInfo}>
-                    <Text style={styles.leadName}>{lead.name}</Text>
-                    <Text style={styles.leadDetail}>
-                      {lead.product} • {lead.id} • {lead.city}
-                    </Text>
-                    {lead.date && <Text style={styles.leadDate}>{lead.date}</Text>}
-                  </View>
-                  <View style={styles.leadMeta}>
-                    <Text style={styles.leadAmount}>{lead.amount}</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
-                      <Text style={[styles.statusBadgeText, { color: status.color }]}>{lead.status}</Text>
+                return (
+                  <TouchableScale 
+                    key={lead.id} 
+                    style={styles.leadCard}
+                    onPress={() => handleLeadPress(lead.id)}
+                  >
+                    <View style={[styles.leadAvatar, { backgroundColor: lead.color || '#DE1F26' }]}>
+                      <Text style={styles.avatarText}>{initials}</Text>
                     </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })
-          )}
-          <View style={{ height: 100 }} />
-        </ScrollView>
+                    <View style={styles.leadInfo}>
+                      <Text style={styles.leadName}>{lead.name}</Text>
+                      <Text style={styles.leadDetail}>
+                        {lead.product} • {lead.id} • {lead.city}
+                      </Text>
+                      {lead.date && <Text style={styles.leadDate}>{lead.date}</Text>}
+                    </View>
+                    <View style={styles.leadMeta}>
+                      <Text style={styles.leadAmount}>{lead.amount}</Text>
+                      <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
+                        <Text style={[styles.statusBadgeText, { color: status.color }]}>{lead.status}</Text>
+                      </View>
+                    </View>
+                  </TouchableScale>
+                );
+              })
+            )}
+            <View style={{ height: 100 }} />
+          </ScrollView>
+        </Animated.View>
 
-        {/* Floating Action Button (FAB) */}
-        <TouchableOpacity 
+        {/* Floating Action Button (FAB) wrapped in TouchableScale */}
+        <TouchableScale 
           style={styles.fab} 
           onPress={() => router.push('/(tabs)/new-lead' as any)}
-          activeOpacity={0.8}
         >
           <MaterialCommunityIcons name="plus" size={28} color="#FFFFFF" />
-        </TouchableOpacity>
+        </TouchableScale>
       </Animated.View>
     </View>
   );
