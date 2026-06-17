@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Pressable, Animated, StyleProp, ViewStyle, PressableProps } from 'react-native';
+import { Pressable, Animated, StyleProp, ViewStyle, PressableProps, StyleSheet } from 'react-native';
 
 interface TouchableScaleProps extends PressableProps {
   children: React.ReactNode;
@@ -34,17 +34,45 @@ export function TouchableScale({
     }).start();
   };
 
+  const flatStyle = style ? StyleSheet.flatten(style) : {};
+  const containerStyle: ViewStyle = {};
+  const layoutStyle: ViewStyle = {};
+
+  const layoutKeys = [
+    'flexDirection',
+    'alignItems',
+    'justifyContent',
+    'gap',
+    'flex',
+    'flexWrap',
+    'padding',
+    'paddingLeft',
+    'paddingRight',
+    'paddingTop',
+    'paddingBottom',
+    'paddingHorizontal',
+    'paddingVertical',
+  ];
+
+  Object.keys(flatStyle).forEach((key) => {
+    if (layoutKeys.includes(key)) {
+      (layoutStyle as any)[key] = (flatStyle as any)[key];
+    } else {
+      (containerStyle as any)[key] = (flatStyle as any)[key];
+    }
+  });
+
   return (
-    <Pressable
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      onPress={onPress}
-      style={style}
-      {...props}
-    >
-      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+    <Animated.View style={[{ transform: [{ scale: scaleAnim }] }, containerStyle]}>
+      <Pressable
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
+        style={layoutStyle}
+        {...props}
+      >
         {children}
-      </Animated.View>
-    </Pressable>
+      </Pressable>
+    </Animated.View>
   );
 }
