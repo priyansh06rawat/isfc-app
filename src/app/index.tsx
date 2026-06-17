@@ -1,10 +1,30 @@
-import { View, Text, StyleSheet } from 'react-native';
-import { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 
 export default function SplashScreen() {
   const { isAuthenticated, isLoading } = useAuth();
+  
+  // Animation hooks
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 5,
+        tension: 40,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
   useEffect(() => {
     if (!isLoading) {
@@ -14,19 +34,25 @@ export default function SplashScreen() {
         } else {
           router.replace('/(auth)/login' as any);
         }
-      }, 1500);
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, [isLoading, isAuthenticated]);
 
   return (
     <View style={styles.container}>
-      <View style={styles.logoContainer}>
+      <Animated.View style={[
+        styles.logoContainer,
+        {
+          opacity: fadeAnim,
+          transform: [{ scale: scaleAnim }]
+        }
+      ]}>
         <Text style={styles.title}>
           India<Text style={styles.highlight}>Shelter</Text>
         </Text>
         <Text style={styles.subtitle}>HOME LOANS</Text>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -34,7 +60,7 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -42,9 +68,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: '900',
-    color: '#2D3134',
+    color: '#1E293B',
     letterSpacing: -0.5,
   },
   highlight: {
@@ -52,9 +78,9 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#555',
-    letterSpacing: 2,
-    marginTop: 4,
+    fontWeight: '700',
+    color: '#64748B',
+    letterSpacing: 3,
+    marginTop: 6,
   },
 });

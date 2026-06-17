@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Platform, Alert } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Platform, Alert, Animated } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { router } from 'expo-router';
 
@@ -13,6 +14,25 @@ export default function DashboardScreen() {
   } = useAuth();
 
   const [hideBanner, setHideBanner] = React.useState(false);
+
+  // Animation hooks
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(15)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
   const handleEnableNotifications = () => {
     setNotificationsEnabled(true);
@@ -59,160 +79,162 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header Hero Area */}
-        <View style={styles.hero}>
-          <View style={styles.heroHeader}>
-            <View>
-              <Text style={styles.greeting}>Good Evening, <Text style={styles.greetingHighlight}>{onboardingData.fullName || 'Rajesh'}!</Text> 👋</Text>
-              <Text style={styles.greetingSub}>DSA Partner · Code: DSA-08421</Text>
+        <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+          {/* Header Hero Area */}
+          <View style={styles.hero}>
+            <View style={styles.heroHeader}>
+              <View>
+                <Text style={styles.greeting}>Good Evening, <Text style={styles.greetingHighlight}>{onboardingData.fullName || 'Rajesh'}!</Text></Text>
+                <Text style={styles.greetingSub}>DSA Partner · Code: DSA-08421</Text>
+              </View>
+              <TouchableOpacity onPress={() => router.push('/(tabs)/profile' as any)} style={styles.avatar}>
+                <Text style={styles.avatarText}>RK</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/profile' as any)} style={styles.avatar}>
-              <Text style={styles.avatarText}>RK</Text>
-            </TouchableOpacity>
-          </View>
 
-          {/* KYC Status Banner */}
-          <View style={styles.statusBanner}>
-            <Text style={styles.statusIcon}>🟢</Text>
-            <View>
-              <Text style={styles.statusTitle}>KYC Approved</Text>
-              <Text style={styles.statusSub}>Your account is active and verified</Text>
+            {/* KYC Status Banner */}
+            <View style={styles.statusBanner}>
+              <View style={styles.statusDot} />
+              <View>
+                <Text style={styles.statusTitle}>KYC Approved</Text>
+                <Text style={styles.statusSub}>Your account is active and verified</Text>
+              </View>
             </View>
-          </View>
 
-          {/* Push Notification Banner */}
-          {!notificationsEnabled && !hideBanner && (
-            <View style={styles.notificationBanner}>
-              <View style={styles.notificationBannerContent}>
-                <Text style={styles.notificationIcon}>🔔</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.notificationTitle}>Enable Push Notifications</Text>
-                  <Text style={styles.notificationSub}>Stay updated on your lead statuses</Text>
+            {/* Push Notification Banner */}
+            {!notificationsEnabled && !hideBanner && (
+              <View style={styles.notificationBanner}>
+                <View style={styles.notificationBannerContent}>
+                  <MaterialCommunityIcons name="bell-ring-outline" size={20} color="#1E3A8A" style={{ marginRight: 12 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.notificationTitle}>Enable Push Notifications</Text>
+                    <Text style={styles.notificationSub}>Stay updated on your lead statuses</Text>
+                  </View>
+                </View>
+                <View style={styles.notificationActions}>
+                  <TouchableOpacity onPress={() => setHideBanner(true)}>
+                    <Text style={styles.notificationDismiss}>Later</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.notificationEnableBtn} onPress={handleEnableNotifications}>
+                    <Text style={styles.notificationEnableText}>Enable Now</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
-              <View style={styles.notificationActions}>
-                <TouchableOpacity onPress={() => setHideBanner(true)}>
-                  <Text style={styles.notificationDismiss}>Later</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.notificationEnableBtn} onPress={handleEnableNotifications}>
-                  <Text style={styles.notificationEnableText}>Enable Now</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
+            )}
 
-          {/* Stats Row */}
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <Text style={[styles.statValue, { color: '#DE1F26' }]}>{leads.length}</Text>
-              <Text style={styles.statLabel}>Leads</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={[styles.statValue, { color: '#10B981' }]}>₹4.2Cr</Text>
-              <Text style={styles.statLabel}>Disbursed</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={[styles.statValue, { color: '#F59E0B' }]}>₹84K</Text>
-              <Text style={styles.statLabel}>Earned</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActionsGrid}>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(tabs)/new-lead' as any)}>
-              <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(108,99,255,0.15)' }]}>
-                <Text style={styles.actionIcon}>➕</Text>
+            {/* Stats Row */}
+            <View style={styles.statsRow}>
+              <View style={styles.statBox}>
+                <Text style={[styles.statValue, { color: '#DE1F26' }]}>{leads.length}</Text>
+                <Text style={styles.statLabel}>Leads</Text>
               </View>
-              <Text style={styles.actionLabel}>New Lead</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(tabs)/leads')}>
-              <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(0,212,255,0.12)' }]}>
-                <Text style={styles.actionIcon}>📊</Text>
+              <View style={styles.statBox}>
+                <Text style={[styles.statValue, { color: '#10B981' }]}>₹4.2Cr</Text>
+                <Text style={styles.statLabel}>Disbursed</Text>
               </View>
-              <Text style={styles.actionLabel}>My Leads</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(tabs)/payouts')}>
-              <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(0,229,160,0.12)' }]}>
-                <Text style={styles.actionIcon}>💰</Text>
-              </View>
-              <Text style={styles.actionLabel}>Payouts</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionBtn} onPress={() => Alert.alert('Desktop Admin', 'Opening India Shelter Admin Dashboard view...')}>
-              <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(255,184,48,0.12)' }]}>
-                <Text style={styles.actionIcon}>🖥️</Text>
-              </View>
-              <Text style={styles.actionLabel}>Dashboard</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Commission Card */}
-        <View style={styles.section}>
-          <View style={styles.payoutCard}>
-            <View style={styles.payoutHeader}>
-              <View>
-                <Text style={styles.payoutLabel}>NEXT PAYOUT</Text>
-                <Text style={styles.payoutAmount}>₹84,200</Text>
-                <Text style={styles.payoutDate}>Due on 15 Jun 2026</Text>
-              </View>
-              <Text style={styles.payoutIcon}>💸</Text>
-            </View>
-            <View style={styles.payoutMetrics}>
-              <View>
-                <Text style={styles.metricLabel}>This Month</Text>
-                <Text style={[styles.metricValue, { color: '#10B981' }]}>₹1.2L</Text>
-              </View>
-              <View>
-                <Text style={styles.metricLabel}>Pending</Text>
-                <Text style={[styles.metricValue, { color: '#F59E0B' }]}>₹42K</Text>
-              </View>
-              <View>
-                <Text style={styles.metricLabel}>YTD</Text>
-                <Text style={[styles.metricValue, { color: '#06B6D4' }]}>₹8.4L</Text>
+              <View style={styles.statBox}>
+                <Text style={[styles.statValue, { color: '#F59E0B' }]}>₹84K</Text>
+                <Text style={styles.statLabel}>Earned</Text>
               </View>
             </View>
           </View>
-        </View>
 
-        {/* Recent Leads */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Leads</Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/leads')}>
-              <Text style={styles.viewAll}>View All →</Text>
-            </TouchableOpacity>
+          {/* Quick Actions */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <View style={styles.quickActionsGrid}>
+              <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(tabs)/new-lead' as any)}>
+                <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(222,31,38,0.1)' }]}>
+                  <MaterialCommunityIcons name="plus" size={24} color="#DE1F26" />
+                </View>
+                <Text style={styles.actionLabel}>New Lead</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(tabs)/leads')}>
+                <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(0,212,255,0.12)' }]}>
+                  <MaterialCommunityIcons name="file-document-outline" size={24} color="#00D4FF" />
+                </View>
+                <Text style={styles.actionLabel}>My Leads</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(tabs)/payouts')}>
+                <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(0,229,160,0.12)' }]}>
+                  <MaterialCommunityIcons name="cash-multiple" size={24} color="#00E5A0" />
+                </View>
+                <Text style={styles.actionLabel}>Payouts</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.actionBtn} onPress={() => Alert.alert('Desktop Admin', 'Opening India Shelter Admin Dashboard view...')}>
+                <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(255,184,48,0.12)' }]}>
+                  <MaterialCommunityIcons name="monitor" size={24} color="#FFB830" />
+                </View>
+                <Text style={styles.actionLabel}>Dashboard</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
-          {showRecentLeads.map((lead) => (
-            <TouchableOpacity 
-              key={lead.id} 
-              style={styles.leadCard} 
-              onPress={() => handleRecentLeadPress(lead.id)}
-            >
-              <View style={styles.leadHeader}>
-                <Text style={styles.leadName}>{lead.name}</Text>
-                <View style={getStatusStyle(lead.status)}>
-                  <Text style={getStatusTextStyle(lead.status)}>{getStatusText(lead.status)}</Text>
+          {/* Commission Card */}
+          <View style={styles.section}>
+            <View style={styles.payoutCard}>
+              <View style={styles.payoutHeader}>
+                <View>
+                  <Text style={styles.payoutLabel}>NEXT PAYOUT</Text>
+                  <Text style={styles.payoutAmount}>₹84,200</Text>
+                  <Text style={styles.payoutDate}>Due on 15 Jun 2026</Text>
+                </View>
+                <MaterialCommunityIcons name="currency-inr" size={32} color="#10B981" />
+              </View>
+              <View style={styles.payoutMetrics}>
+                <View>
+                  <Text style={styles.metricLabel}>This Month</Text>
+                  <Text style={[styles.metricValue, { color: '#10B981' }]}>₹1.2L</Text>
+                </View>
+                <View>
+                  <Text style={styles.metricLabel}>Pending</Text>
+                  <Text style={[styles.metricValue, { color: '#F59E0B' }]}>₹42K</Text>
+                </View>
+                <View>
+                  <Text style={styles.metricLabel}>YTD</Text>
+                  <Text style={[styles.metricValue, { color: '#06B6D4' }]}>₹8.4L</Text>
                 </View>
               </View>
-              <View style={styles.leadDetailsRow}>
-                <Text style={styles.leadDetailText}>{lead.id}</Text>
-                <Text style={styles.leadDetailText}>·</Text>
-                <Text style={styles.leadDetailText}>{lead.amount}</Text>
-                <Text style={styles.leadDetailText}>·</Text>
-                <Text style={styles.leadDetailText}>{lead.product}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-        
-        <View style={{ height: 60 }} />
+            </View>
+          </View>
+
+          {/* Recent Leads */}
+          <View style={styles.section}>
+            <View style={styles.recentLeadsHeader}>
+              <Text style={styles.sectionTitle}>Recent Leads</Text>
+              <TouchableOpacity onPress={() => router.push('/(tabs)/leads')}>
+                <Text style={styles.viewAll}>View All</Text>
+              </TouchableOpacity>
+            </View>
+
+            {showRecentLeads.map((lead) => (
+              <TouchableOpacity 
+                key={lead.id} 
+                style={styles.leadCard} 
+                onPress={() => handleRecentLeadPress(lead.id)}
+              >
+                <View style={styles.leadHeader}>
+                  <Text style={styles.leadName}>{lead.name}</Text>
+                  <View style={getStatusStyle(lead.status)}>
+                    <Text style={getStatusTextStyle(lead.status)}>{getStatusText(lead.status)}</Text>
+                  </View>
+                </View>
+                <View style={styles.leadDetailsRow}>
+                  <Text style={styles.leadDetailText}>{lead.id}</Text>
+                  <Text style={styles.leadDetailText}>·</Text>
+                  <Text style={styles.leadDetailText}>{lead.amount}</Text>
+                  <Text style={styles.leadDetailText}>·</Text>
+                  <Text style={styles.leadDetailText}>{lead.product}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+          
+          <View style={{ height: 60 }} />
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -279,8 +301,11 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
   },
-  statusIcon: {
-    fontSize: 20,
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#10B981',
     marginRight: 12,
   },
   statusTitle: {
@@ -305,10 +330,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
-  },
-  notificationIcon: {
-    fontSize: 20,
-    marginRight: 12,
   },
   notificationTitle: {
     fontSize: 13,
@@ -375,7 +396,7 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingBottom: 0,
   },
-  sectionHeader: {
+  recentLeadsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -385,7 +406,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     color: '#2D3134',
-    marginBottom: 16,
   },
   viewAll: {
     fontSize: 13,
@@ -407,9 +427,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
-  },
-  actionIcon: {
-    fontSize: 24,
   },
   actionLabel: {
     fontSize: 11,
@@ -451,9 +468,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
     marginTop: 4,
-  },
-  payoutIcon: {
-    fontSize: 40,
   },
   payoutMetrics: {
     flexDirection: 'row',

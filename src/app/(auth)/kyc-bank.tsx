@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { TopNav } from '../../components/ui/TopNav';
@@ -10,6 +11,25 @@ import { useAuth } from '../../context/AuthContext';
 export default function KycBankScreen() {
   const { onboardingData, updateOnboardingData } = useAuth();
   const [isVerifying, setIsVerifying] = useState(false);
+
+  // Animation hooks
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
   const handleVerify = () => {
     if (!onboardingData.accNumber || !onboardingData.ifsc) return;
@@ -46,83 +66,85 @@ export default function KycBankScreen() {
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.content}>
-          <View style={styles.progressContainer}>
-            <View style={[styles.progressBar, { width: '83%' }]} />
-          </View>
+          <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+            <View style={styles.progressContainer}>
+              <View style={[styles.progressBar, { width: '83%' }]} />
+            </View>
 
-          <View style={styles.header}>
-            <Text style={styles.title}>Bank Verification</Text>
-            <Text style={styles.subtitle}>Add bank details where you want to receive your commission payouts</Text>
-          </View>
+            <View style={styles.header}>
+              <Text style={styles.title}>Bank Verification</Text>
+              <Text style={styles.subtitle}>Add bank details where you want to receive your commission payouts</Text>
+            </View>
 
-          <Input
-            label="Account Holder Name"
-            placeholder="As per bank records"
-            value={onboardingData.accName}
-            onChangeText={(v) => { updateForm('accName', v); updateOnboardingData({ isBankVerified: false }); }}
-            required
-          />
+            <Input
+              label="Account Holder Name"
+              placeholder="As per bank records"
+              value={onboardingData.accName}
+              onChangeText={(v) => { updateForm('accName', v); updateOnboardingData({ isBankVerified: false }); }}
+              required
+            />
 
-          <Input
-            label="Account Number"
-            placeholder="Enter account number"
-            keyboardType="number-pad"
-            value={onboardingData.accNumber}
-            onChangeText={(v) => { updateForm('accNumber', v); updateOnboardingData({ isBankVerified: false }); }}
-            required
-          />
+            <Input
+              label="Account Number"
+              placeholder="Enter account number"
+              keyboardType="number-pad"
+              value={onboardingData.accNumber}
+              onChangeText={(v) => { updateForm('accNumber', v); updateOnboardingData({ isBankVerified: false }); }}
+              required
+            />
 
-          <Input
-            label="IFSC Code"
-            placeholder="e.g. HDFC0001234"
-            autoCapitalize="characters"
-            maxLength={11}
-            value={onboardingData.ifsc}
-            onChangeText={(v) => { updateForm('ifsc', v); updateOnboardingData({ isBankVerified: false }); }}
-            required
-          />
+            <Input
+              label="IFSC Code"
+              placeholder="e.g. HDFC0001234"
+              autoCapitalize="characters"
+              maxLength={11}
+              value={onboardingData.ifsc}
+              onChangeText={(v) => { updateForm('ifsc', v); updateOnboardingData({ isBankVerified: false }); }}
+              required
+            />
 
-          <Input
-            label="Account Type"
-            placeholder="e.g. Savings / Current"
-            value={onboardingData.accType}
-            onChangeText={(v) => updateForm('accType', v)}
-          />
+            <Input
+              label="Account Type"
+              placeholder="e.g. Savings / Current"
+              value={onboardingData.accType}
+              onChangeText={(v) => updateForm('accType', v)}
+            />
 
-          <Button
-            title={onboardingData.isBankVerified ? "✅ Bank Verified" : "₹1 Penny Drop Verification"}
-            variant={onboardingData.isBankVerified ? "primary" : "outline"}
-            style={[styles.verifyButton, onboardingData.isBankVerified && styles.verifiedButton]}
-            isLoading={isVerifying}
-            onPress={handleVerify}
-            disabled={!onboardingData.accNumber || !onboardingData.ifsc || onboardingData.isBankVerified}
-          />
+            <Button
+              title={onboardingData.isBankVerified ? "Bank Verified" : "Penny Drop Verification (₹1)"}
+              variant={onboardingData.isBankVerified ? "primary" : "outline"}
+              style={[styles.verifyButton, onboardingData.isBankVerified && styles.verifiedButton]}
+              isLoading={isVerifying}
+              onPress={handleVerify}
+              disabled={!onboardingData.accNumber || !onboardingData.ifsc || onboardingData.isBankVerified}
+            />
 
-          <Text style={styles.uploadLabel}>Upload Cancelled Cheque / Statement</Text>
-          <TouchableOpacity 
-            style={[styles.uploadBox, onboardingData.bankDocUploaded && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} 
-            onPress={handleUpload}
-          >
-            {onboardingData.bankDocUploaded ? (
-              <>
-                <Text style={[styles.uploadIcon, { color: '#10B981' }]}>✅</Text>
-                <Text style={[styles.uploadText, { color: '#065F46' }]}>cancelled_cheque.pdf Uploaded</Text>
-                <Text style={styles.uploadSubtext}>Tap to change file</Text>
-              </>
-            ) : (
-              <>
-                <Text style={styles.uploadIcon}>🏦</Text>
-                <Text style={styles.uploadText}>Tap to upload</Text>
-                <Text style={styles.uploadSubtext}>Must clearly show Name, A/C No and IFSC</Text>
-              </>
-            )}
-          </TouchableOpacity>
+            <Text style={styles.uploadLabel}>Upload Cancelled Cheque / Statement</Text>
+            <TouchableOpacity 
+              style={[styles.uploadBox, onboardingData.bankDocUploaded && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} 
+              onPress={handleUpload}
+            >
+              {onboardingData.bankDocUploaded ? (
+                <>
+                  <MaterialCommunityIcons name="check-circle" size={32} color="#10B981" style={{ marginBottom: 12 }} />
+                  <Text style={[styles.uploadText, { color: '#065F46' }]}>cancelled_cheque.pdf Uploaded</Text>
+                  <Text style={styles.uploadSubtext}>Tap to change file</Text>
+                </>
+              ) : (
+                <>
+                  <MaterialCommunityIcons name="bank-outline" size={32} color="#64748B" style={{ marginBottom: 12 }} />
+                  <Text style={styles.uploadText}>Tap to upload</Text>
+                  <Text style={styles.uploadSubtext}>Must clearly show Name, A/C No and IFSC</Text>
+                </>
+              )}
+            </TouchableOpacity>
 
-          <Button
-            title="Continue →"
-            onPress={handleContinue}
-            style={styles.button}
-          />
+            <Button
+              title="Continue"
+              onPress={handleContinue}
+              style={styles.button}
+            />
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -187,10 +209,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#F8F9FA',
     marginBottom: 32,
-  },
-  uploadIcon: {
-    fontSize: 32,
-    marginBottom: 12,
   },
   uploadText: {
     fontSize: 14,

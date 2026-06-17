@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, Text } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, ScrollView, Text, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../../context/AuthContext';
 import { TopNav } from '../../../components/ui/TopNav';
 
@@ -12,6 +13,25 @@ export default function LeadDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { leads } = useAuth();
 
+  // Animation hooks
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(15)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
+
   // Find the exact lead from our global context state
   const lead = leads.find((l) => l.id === id);
 
@@ -20,7 +40,8 @@ export default function LeadDetailsScreen() {
       <SafeAreaView style={styles.container}>
         <TopNav title="Lead Details" />
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>⚠️ Lead not found.</Text>
+          <MaterialCommunityIcons name="alert-circle-outline" size={24} color="#DC2626" style={{ marginBottom: 8 }} />
+          <Text style={styles.errorText}>Lead not found.</Text>
         </View>
       </SafeAreaView>
     );
@@ -56,102 +77,104 @@ export default function LeadDetailsScreen() {
       <TopNav title="Lead Details" />
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Lead Hero Area */}
-        <View style={styles.hero}>
-          <View style={[styles.avatar, { backgroundColor: lead.color || '#DE1F26' }]}>
-            <Text style={styles.avatarText}>{initials}</Text>
+        <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+          {/* Lead Hero Area */}
+          <View style={styles.hero}>
+            <View style={[styles.avatar, { backgroundColor: lead.color || '#DE1F26' }]}>
+              <Text style={styles.avatarText}>{initials}</Text>
+            </View>
+            <Text style={styles.name}>{lead.name}</Text>
+            <Text style={styles.subtitle}>ID: {lead.id}</Text>
+            <View style={[styles.badge, { backgroundColor: badge.bg, borderColor: badge.border }]}>
+              <Text style={[styles.badgeText, { color: badge.text }]}>{lead.status}</Text>
+            </View>
           </View>
-          <Text style={styles.name}>{lead.name}</Text>
-          <Text style={styles.subtitle}>ID: {lead.id}</Text>
-          <View style={[styles.badge, { backgroundColor: badge.bg, borderColor: badge.border }]}>
-            <Text style={[styles.badgeText, { color: badge.text }]}>{lead.status}</Text>
-          </View>
-        </View>
 
-        {/* Lead Metrics Card */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Loan Summary</Text>
+          {/* Lead Metrics Card */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Loan Summary</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Product</Text>
+              <Text style={styles.value}>{lead.product}</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.row}>
+              <Text style={styles.label}>Amount</Text>
+              <Text style={[styles.value, { color: '#DE1F26' }]}>{lead.amount}</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.row}>
+              <Text style={styles.label}>Location</Text>
+              <Text style={styles.value}>{lead.city}</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.row}>
+              <Text style={styles.label}>Created On</Text>
+              <Text style={styles.value}>{lead.date || 'N/A'}</Text>
+            </View>
           </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Product</Text>
-            <Text style={styles.value}>{lead.product}</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.row}>
-            <Text style={styles.label}>Amount</Text>
-            <Text style={[styles.value, { color: '#DE1F26' }]}>{lead.amount}</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.row}>
-            <Text style={styles.label}>Location</Text>
-            <Text style={styles.value}>{lead.city}</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.row}>
-            <Text style={styles.label}>Created On</Text>
-            <Text style={styles.value}>{lead.date || 'N/A'}</Text>
-          </View>
-        </View>
 
-        {/* Pipeline Progress Tracker */}
-        <View style={styles.trackerContainer}>
-          <Text style={styles.trackerTitle}>Status Pipeline</Text>
-          
-          <View style={styles.pipeline}>
-            {STEPS.map((step, idx) => {
-              const isCompleted = idx <= activeStep;
-              const isCurrent = idx === activeStep;
-              const showLine = idx < STEPS.length - 1;
+          {/* Pipeline Progress Tracker */}
+          <View style={styles.trackerContainer}>
+            <Text style={styles.trackerTitle}>Status Pipeline</Text>
+            
+            <View style={styles.pipeline}>
+              {STEPS.map((step, idx) => {
+                const isCompleted = idx <= activeStep;
+                const isCurrent = idx === activeStep;
+                const showLine = idx < STEPS.length - 1;
 
-              return (
-                <View key={step} style={styles.stepRow}>
-                  {/* Left node indicators */}
-                  <View style={styles.nodeColumn}>
-                    <View style={[
-                      styles.circle,
-                      isCompleted && styles.circleCompleted,
-                      isCurrent && styles.circleCurrent
-                    ]}>
-                      <Text style={[
-                        styles.circleText,
-                        isCompleted && styles.circleTextCompleted
+                return (
+                  <View key={step} style={styles.stepRow}>
+                    {/* Left node indicators */}
+                    <View style={styles.nodeColumn}>
+                      <View style={[
+                        styles.circle,
+                        isCompleted && styles.circleCompleted,
+                        isCurrent && styles.circleCurrent
                       ]}>
-                        {isCompleted ? '✓' : idx + 1}
+                        <Text style={[
+                          styles.circleText,
+                          isCompleted && styles.circleTextCompleted
+                        ]}>
+                          {isCompleted ? '✓' : idx + 1}
+                        </Text>
+                      </View>
+                      {showLine && (
+                        <View style={[
+                          styles.line,
+                          idx < activeStep && styles.lineCompleted
+                        ]} />
+                      )}
+                    </View>
+
+                    {/* Right label descriptions */}
+                    <View style={styles.labelColumn}>
+                      <Text style={[
+                        styles.stepLabel,
+                        isCompleted && styles.stepLabelCompleted,
+                        isCurrent && styles.stepLabelCurrent
+                      ]}>
+                        {step}
+                      </Text>
+                      <Text style={styles.stepSub}>
+                        {idx === 0 && 'Lead created in sourcing platform'}
+                        {idx === 1 && (isCompleted ? 'All mandatory KYC/Income files validated' : 'Pending bank/KYC uploads')}
+                        {idx === 2 && (isCompleted ? 'Passed credit screening & automated rule checks' : 'Underwriting review pipeline')}
+                        {idx === 3 && (isCompleted ? 'Sanction letter generated and sent' : 'Generating formal approval letter')}
+                        {idx === 4 && (isCompleted ? 'Disbursement complete' : 'Executing loan documentation & payouts')}
                       </Text>
                     </View>
-                    {showLine && (
-                      <View style={[
-                        styles.line,
-                        idx < activeStep && styles.lineCompleted
-                      ]} />
-                    )}
                   </View>
-
-                  {/* Right label descriptions */}
-                  <View style={styles.labelColumn}>
-                    <Text style={[
-                      styles.stepLabel,
-                      isCompleted && styles.stepLabelCompleted,
-                      isCurrent && styles.stepLabelCurrent
-                    ]}>
-                      {step}
-                    </Text>
-                    <Text style={styles.stepSub}>
-                      {idx === 0 && 'Lead created in sourcing platform'}
-                      {idx === 1 && (isCompleted ? 'All mandatory KYC/Income files validated' : 'Pending bank/KYC uploads')}
-                      {idx === 2 && (isCompleted ? 'Passed credit screening & automated rule checks' : 'Underwriting review pipeline')}
-                      {idx === 3 && (isCompleted ? 'Sanction letter generated and sent' : 'Generating formal approval letter')}
-                      {idx === 4 && (isCompleted ? 'Disbursement complete' : 'Executing loan documentation & payouts')}
-                    </Text>
-                  </View>
-                </View>
-              );
-            })}
+                );
+              })}
+            </View>
           </View>
-        </View>
 
-        <View style={{ height: 40 }} />
+          <View style={{ height: 40 }} />
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { TopNav } from '../../components/ui/TopNav';
@@ -9,7 +10,26 @@ import { useAuth } from '../../context/AuthContext';
 
 export default function KycAadhaarScreen() {
   const { onboardingData, updateOnboardingData } = useAuth();
-  const [isVerifying, setIsVerifying] = React.useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  // Animation hooks
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
   const handleDigiLocker = () => {
     setIsVerifying(true);
@@ -48,82 +68,93 @@ export default function KycAadhaarScreen() {
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.content}>
-          <View style={styles.progressContainer}>
-            <View style={[styles.progressBar, { width: '33%' }]} />
-          </View>
+          <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+            <View style={styles.progressContainer}>
+              <View style={[styles.progressBar, { width: '33%' }]} />
+            </View>
 
-          <View style={styles.header}>
-            <Text style={styles.title}>Verify Aadhaar Details</Text>
-            <Text style={styles.subtitle}>Upload your Aadhaar card for address verification</Text>
-          </View>
+            <View style={styles.header}>
+              <Text style={styles.title}>Verify Aadhaar Details</Text>
+              <Text style={styles.subtitle}>Upload your Aadhaar card for address verification</Text>
+            </View>
 
-          <Input
-            label="Last 4 Digits of Aadhaar"
-            placeholder="XXXX XXXX 1234"
-            keyboardType="number-pad"
-            maxLength={4}
-            value={onboardingData.aadhaarLast4}
-            onChangeText={(text) => {
-              updateOnboardingData({ aadhaarLast4: text, isAadhaarVerified: false });
-            }}
-            required
-          />
+            <Input
+              label="Last 4 Digits of Aadhaar"
+              placeholder="XXXX XXXX 1234"
+              keyboardType="number-pad"
+              maxLength={4}
+              value={onboardingData.aadhaarLast4}
+              onChangeText={(text) => {
+                updateOnboardingData({ aadhaarLast4: text, isAadhaarVerified: false });
+              }}
+              required
+            />
 
-          <Button
-            title={onboardingData.isAadhaarVerified ? "✅ Aadhaar Verified (DigiLocker)" : "🏛️ Fetch from DigiLocker API"}
-            variant="primary"
-            style={[styles.digiButton, onboardingData.isAadhaarVerified && styles.verifiedButton]}
-            isLoading={isVerifying}
-            onPress={handleDigiLocker}
-            disabled={onboardingData.isAadhaarVerified}
-          />
+            <Button
+              title={onboardingData.isAadhaarVerified ? "Aadhaar Verified (DigiLocker)" : "Fetch from DigiLocker API"}
+              variant="primary"
+              style={[styles.digiButton, onboardingData.isAadhaarVerified && styles.verifiedButton]}
+              isLoading={isVerifying}
+              onPress={handleDigiLocker}
+              disabled={onboardingData.isAadhaarVerified}
+            />
 
-          <View style={styles.dividerContainer}>
-            <View style={styles.divider} />
-            <Text style={styles.dividerText}>or upload documents</Text>
-            <View style={styles.divider} />
-          </View>
+            <View style={styles.dividerContainer}>
+              <View style={styles.divider} />
+              <Text style={styles.dividerText}>or upload documents</Text>
+              <View style={styles.divider} />
+            </View>
 
-          <View style={styles.uploadRow}>
-            <TouchableOpacity 
-              style={[styles.uploadBoxHalf, onboardingData.aadhaarFrontUploaded && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} 
-              onPress={handleUploadFront}
-            >
-              <Text style={[styles.uploadIcon, onboardingData.aadhaarFrontUploaded && { color: '#10B981' }]}>
-                {onboardingData.aadhaarFrontUploaded ? '✅' : '📄'}
+            <View style={styles.uploadRow}>
+              <TouchableOpacity 
+                style={[styles.uploadBoxHalf, onboardingData.aadhaarFrontUploaded && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} 
+                onPress={handleUploadFront}
+              >
+                <MaterialCommunityIcons 
+                  name={onboardingData.aadhaarFrontUploaded ? "check-circle" : "file-document-outline"} 
+                  size={24} 
+                  color={onboardingData.aadhaarFrontUploaded ? "#10B981" : "#64748B"} 
+                  style={{ marginBottom: 8 }}
+                />
+                <Text style={[styles.uploadText, onboardingData.aadhaarFrontUploaded && { color: '#065F46' }]}>
+                  {onboardingData.aadhaarFrontUploaded ? 'aadhaar_front.jpg' : 'Aadhaar Front'} <Text style={styles.asterisk}>*</Text>
+                </Text>
+                <Text style={styles.uploadSubtext}>{onboardingData.aadhaarFrontUploaded ? 'Uploaded' : 'Upload'}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[styles.uploadBoxHalf, onboardingData.aadhaarBackUploaded && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} 
+                onPress={handleUploadBack}
+              >
+                <MaterialCommunityIcons 
+                  name={onboardingData.aadhaarBackUploaded ? "check-circle" : "file-document-outline"} 
+                  size={24} 
+                  color={onboardingData.aadhaarBackUploaded ? "#10B981" : "#64748B"} 
+                  style={{ marginBottom: 8 }}
+                />
+                <Text style={[styles.uploadText, onboardingData.aadhaarBackUploaded && { color: '#065F46' }]}>
+                  {onboardingData.aadhaarBackUploaded ? 'aadhaar_back.jpg' : 'Aadhaar Back'} <Text style={styles.asterisk}>*</Text>
+                </Text>
+                <Text style={styles.uploadSubtext}>{onboardingData.aadhaarBackUploaded ? 'Uploaded' : 'Upload'}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.privacyNotice}>
+              <View style={styles.noticeHeader}>
+                <MaterialCommunityIcons name="shield-alert" size={16} color="#92400E" style={{ marginRight: 6 }} />
+                <Text style={styles.privacyBold}>Privacy Notice: </Text>
+              </View>
+              <Text style={styles.privacyText}>
+                Aadhaar data is masked and stored securely per UIDAI guidelines. Only last 4 digits are stored; full number is used only for OTP verification.
               </Text>
-              <Text style={[styles.uploadText, onboardingData.aadhaarFrontUploaded && { color: '#065F46' }]}>
-                {onboardingData.aadhaarFrontUploaded ? 'aadhaar_front.jpg' : 'Aadhaar Front'} <Text style={styles.asterisk}>*</Text>
-              </Text>
-              <Text style={styles.uploadSubtext}>{onboardingData.aadhaarFrontUploaded ? 'Uploaded' : 'Upload'}</Text>
-            </TouchableOpacity>
+            </View>
 
-            <TouchableOpacity 
-              style={[styles.uploadBoxHalf, onboardingData.aadhaarBackUploaded && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} 
-              onPress={handleUploadBack}
-            >
-              <Text style={[styles.uploadIcon, onboardingData.aadhaarBackUploaded && { color: '#10B981' }]}>
-                {onboardingData.aadhaarBackUploaded ? '✅' : '📄'}
-              </Text>
-              <Text style={[styles.uploadText, onboardingData.aadhaarBackUploaded && { color: '#065F46' }]}>
-                {onboardingData.aadhaarBackUploaded ? 'aadhaar_back.jpg' : 'Aadhaar Back'} <Text style={styles.asterisk}>*</Text>
-              </Text>
-              <Text style={styles.uploadSubtext}>{onboardingData.aadhaarBackUploaded ? 'Uploaded' : 'Upload'}</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.privacyNotice}>
-            <Text style={styles.privacyText}>
-              <Text style={styles.privacyBold}>⚠️ Privacy Notice: </Text>
-              Aadhaar data is masked and stored securely per UIDAI guidelines. Only last 4 digits are stored; full number is used only for OTP verification.
-            </Text>
-          </View>
-
-          <Button
-            title="Continue →"
-            onPress={handleContinue}
-            style={styles.button}
-          />
+            <Button
+              title="Continue"
+              onPress={handleContinue}
+              style={styles.button}
+            />
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -181,10 +212,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#F8F9FA',
   },
-  uploadIcon: {
-    fontSize: 24,
-    marginBottom: 8,
-  },
   uploadText: {
     fontSize: 13,
     fontWeight: '700',
@@ -208,6 +235,11 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 32,
   },
+  noticeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   privacyText: {
     fontSize: 11,
     color: '#92400E',
@@ -215,6 +247,8 @@ const styles = StyleSheet.create({
   },
   privacyBold: {
     fontWeight: '700',
+    color: '#92400E',
+    fontSize: 11,
   },
   button: {
     marginTop: 'auto',

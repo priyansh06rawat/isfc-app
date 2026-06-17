@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { TopNav } from '../../components/ui/TopNav';
@@ -9,7 +10,26 @@ import { useAuth } from '../../context/AuthContext';
 
 export default function KycPanScreen() {
   const { onboardingData, updateOnboardingData } = useAuth();
-  const [isVerifying, setIsVerifying] = React.useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  // Animation hooks
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
   const handleVerify = () => {
     if (onboardingData.pan.length !== 10) return;
@@ -49,73 +69,75 @@ export default function KycPanScreen() {
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.content}>
-          <View style={styles.progressContainer}>
-            <View style={[styles.progressBar, { width: '16%' }]} />
-          </View>
+          <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+            <View style={styles.progressContainer}>
+              <View style={[styles.progressBar, { width: '16%' }]} />
+            </View>
 
-          <View style={styles.header}>
-            <Text style={styles.title}>Verify PAN Details</Text>
-            <Text style={styles.subtitle}>Your PAN is required to check your bureau and credit history</Text>
-          </View>
+            <View style={styles.header}>
+              <Text style={styles.title}>Verify PAN Details</Text>
+              <Text style={styles.subtitle}>Your PAN is required to check your bureau and credit history</Text>
+            </View>
 
-          <Input
-            label="PAN Number"
-            placeholder="ABCDE1234F"
-            autoCapitalize="characters"
-            maxLength={10}
-            value={onboardingData.pan}
-            onChangeText={(text) => {
-              updateOnboardingData({ pan: text, isPanVerified: false });
-            }}
-            required
-          />
+            <Input
+              label="PAN Number"
+              placeholder="ABCDE1234F"
+              autoCapitalize="characters"
+              maxLength={10}
+              value={onboardingData.pan}
+              onChangeText={(text) => {
+                updateOnboardingData({ pan: text, isPanVerified: false });
+              }}
+              required
+            />
 
-          <Button
-            title={onboardingData.isPanVerified ? "✅ Verified" : "Verify via NSDL"}
-            variant={onboardingData.isPanVerified ? "primary" : "outline"}
-            style={[styles.verifyButton, onboardingData.isPanVerified && styles.verifiedButton]}
-            isLoading={isVerifying && !onboardingData.pan}
-            onPress={handleVerify}
-            disabled={onboardingData.pan.length !== 10 || onboardingData.isPanVerified}
-          />
+            <Button
+              title={onboardingData.isPanVerified ? "Verified" : "Verify via NSDL"}
+              variant={onboardingData.isPanVerified ? "primary" : "outline"}
+              style={[styles.verifyButton, onboardingData.isPanVerified && styles.verifiedButton]}
+              isLoading={isVerifying && !onboardingData.pan}
+              onPress={handleVerify}
+              disabled={onboardingData.pan.length !== 10 || onboardingData.isPanVerified}
+            />
 
-          <View style={styles.dividerContainer}>
-            <View style={styles.divider} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.divider} />
-          </View>
+            <View style={styles.dividerContainer}>
+              <View style={styles.divider} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.divider} />
+            </View>
 
-          <Button
-            title={onboardingData.isPanVerified && onboardingData.pan === 'ABCDE1234F' ? "✅ Fetched via DigiLocker" : "🏛️ Fetch from DigiLocker"}
-            variant="primary"
-            style={[styles.digiButton, onboardingData.isPanVerified && onboardingData.pan === 'ABCDE1234F' && styles.verifiedButton]}
-            isLoading={isVerifying && !onboardingData.isPanVerified}
-            onPress={handleDigiLocker}
-            disabled={onboardingData.isPanVerified}
-          />
+            <Button
+              title={onboardingData.isPanVerified && onboardingData.pan === 'ABCDE1234F' ? "Fetched via DigiLocker" : "Fetch from DigiLocker"}
+              variant="primary"
+              style={[styles.digiButton, onboardingData.isPanVerified && onboardingData.pan === 'ABCDE1234F' && styles.verifiedButton]}
+              isLoading={isVerifying && !onboardingData.isPanVerified}
+              onPress={handleDigiLocker}
+              disabled={onboardingData.isPanVerified}
+            />
 
-          <Text style={styles.uploadLabel}>Upload PAN Image * (Optional if verified)</Text>
-          <TouchableOpacity style={[styles.uploadBox, onboardingData.panUploaded && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} onPress={handleUpload}>
-            {onboardingData.panUploaded ? (
-              <>
-                <Text style={[styles.uploadIcon, { color: '#10B981' }]}>✅</Text>
-                <Text style={[styles.uploadText, { color: '#065F46' }]}>pan_card.jpg Uploaded</Text>
-                <Text style={styles.uploadSubtext}>Tap to change photo</Text>
-              </>
-            ) : (
-              <>
-                <Text style={styles.uploadIcon}>📷</Text>
-                <Text style={styles.uploadText}>Tap to upload or take a photo</Text>
-                <Text style={styles.uploadSubtext}>Max size 5MB (JPG, PNG, PDF)</Text>
-              </>
-            )}
-          </TouchableOpacity>
+            <Text style={styles.uploadLabel}>Upload PAN Image * (Optional if verified)</Text>
+            <TouchableOpacity style={[styles.uploadBox, onboardingData.panUploaded && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} onPress={handleUpload}>
+              {onboardingData.panUploaded ? (
+                <>
+                  <MaterialCommunityIcons name="check-circle" size={32} color="#10B981" style={{ marginBottom: 12 }} />
+                  <Text style={[styles.uploadText, { color: '#065F46' }]}>pan_card.jpg Uploaded</Text>
+                  <Text style={styles.uploadSubtext}>Tap to change photo</Text>
+                </>
+              ) : (
+                <>
+                  <MaterialCommunityIcons name="camera" size={32} color="#64748B" style={{ marginBottom: 12 }} />
+                  <Text style={styles.uploadText}>Tap to upload or take a photo</Text>
+                  <Text style={styles.uploadSubtext}>Max size 5MB (JPG, PNG, PDF)</Text>
+                </>
+              )}
+            </TouchableOpacity>
 
-          <Button
-            title="Continue →"
-            onPress={handleContinue}
-            style={styles.button}
-          />
+            <Button
+              title="Continue"
+              onPress={handleContinue}
+              style={styles.button}
+            />
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -201,10 +223,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#F8F9FA',
     marginBottom: 32,
-  },
-  uploadIcon: {
-    fontSize: 32,
-    marginBottom: 12,
   },
   uploadText: {
     fontSize: 14,

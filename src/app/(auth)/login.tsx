@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { useAuth } from '../../context/AuthContext';
@@ -9,6 +10,25 @@ import { useAuth } from '../../context/AuthContext';
 export default function LoginScreen() {
   const [phone, setPhone] = useState('');
   const { setPhoneNumber } = useAuth();
+  
+  // Animation hooks
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
   const handleGetOtp = () => {
     if (phone.length === 10) {
@@ -24,63 +44,68 @@ export default function LoginScreen() {
         style={{ flex: 1 }}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.header}>
-            <View style={styles.iconContainer}>
-              <Text style={styles.icon}>🏦</Text>
-            </View>
-            <Text style={styles.title}>Welcome Back!</Text>
-            <Text style={styles.subtitle}>Enter your registered mobile number to continue</Text>
-          </View>
-
-          <View style={styles.form}>
-            <Input
-              label="Mobile Number"
-              placeholder="98XXXXXXXX"
-              keyboardType="number-pad"
-              maxLength={10}
-              value={phone}
-              onChangeText={setPhone}
-              leftIcon={<Text style={styles.flagIcon}>🇮🇳 +91</Text>}
-            />
-
-            <Button
-              title="Get OTP →"
-              onPress={handleGetOtp}
-              disabled={phone.length !== 10}
-              style={styles.button}
-            />
-
-            <View style={styles.footerText}>
-              <Text style={styles.newPartnerText}>New partner? </Text>
-              <Text
-                style={styles.registerText}
-                onPress={() => {
-                  setPhoneNumber(phone || 'NewUser');
-                  router.push('/(auth)/partner-type' as any);
-                }}
-              >
-                Register Here
-              </Text>
+          <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+            <View style={styles.header}>
+              <View style={styles.iconContainer}>
+                <MaterialCommunityIcons name="bank" size={24} color="#DE1F26" />
+              </View>
+              <Text style={styles.title}>Welcome Back!</Text>
+              <Text style={styles.subtitle}>Enter your registered mobile number to continue</Text>
             </View>
 
-            <View style={styles.dividerContainer}>
-              <View style={styles.divider} />
-              <Text style={styles.dividerText}>or sign in with</Text>
-              <View style={styles.divider} />
-            </View>
+            <View style={styles.form}>
+              <Input
+                label="Mobile Number"
+                placeholder="98XXXXXXXX"
+                keyboardType="number-pad"
+                maxLength={10}
+                value={phone}
+                onChangeText={setPhone}
+                leftIcon={<Text style={styles.flagIcon}>+91</Text>}
+              />
 
-            <View style={styles.socialButtons}>
-              <Button title="🔑 Aadhaar OTP" variant="outline" style={styles.socialBtn} />
-              <Button title="🏛️ DigiLocker" variant="outline" style={styles.socialBtn} />
-            </View>
+              <Button
+                title="Get OTP"
+                onPress={handleGetOtp}
+                disabled={phone.length !== 10}
+                style={styles.button}
+              />
 
-            <View style={styles.secureNotice}>
-              <Text style={styles.secureTitle}>🔒 Secure & Compliant</Text>
-              <Text style={styles.secureText}>
-                Your data is protected under RBI guidelines and DPDP Act 2023. We never share your information without consent.
-              </Text>
+              <View style={styles.footerText}>
+                <Text style={styles.newPartnerText}>New partner? </Text>
+                <Text
+                  style={styles.registerText}
+                  onPress={() => {
+                    setPhoneNumber(phone || 'NewUser');
+                    router.push('/(auth)/partner-type' as any);
+                  }}
+                >
+                  Register Here
+                </Text>
+              </View>
+
+              <View style={styles.dividerContainer}>
+                <View style={styles.divider} />
+                <Text style={styles.dividerText}>or sign in with</Text>
+                <View style={styles.divider} />
+              </View>
+
+              <View style={styles.socialButtons}>
+                <Button title="Aadhaar OTP" variant="outline" style={styles.socialBtn} />
+                <Button title="DigiLocker" variant="outline" style={styles.socialBtn} />
+              </View>
+
+              <View style={styles.secureNotice}>
+                <View style={styles.secureTitleRow}>
+                  <MaterialCommunityIcons name="shield-check" size={16} color="#059669" style={{ marginRight: 6 }} />
+                  <Text style={styles.secureTitle}>Secure & Compliant</Text>
+                </View>
+                <Text style={styles.secureText}>
+                  Your data is protected under RBI guidelines and DPDP Act 2023. We never share your information without consent.
+                </Text>
+              </View>
             </View>
-          </View>
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -109,12 +134,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 20,
   },
-  icon: {
-    fontSize: 22,
-  },
   title: {
     fontSize: 26,
-    fontWeight: '800',
+    fontWeight: '900',
     color: '#2D3134',
     marginBottom: 6,
   },
@@ -127,7 +149,7 @@ const styles = StyleSheet.create({
   },
   flagIcon: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#2D3134',
   },
   button: {
@@ -179,11 +201,15 @@ const styles = StyleSheet.create({
     borderColor: '#DCFCE7',
     borderRadius: 12,
   },
+  secureTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
   secureTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#059669',
-    marginBottom: 4,
   },
   secureText: {
     fontSize: 11,

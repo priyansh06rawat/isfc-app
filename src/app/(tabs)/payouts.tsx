@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Platform, Animated } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
@@ -7,90 +7,111 @@ import { useAuth } from '../../context/AuthContext';
 export default function PayoutsScreen() {
   const insets = useSafeAreaInsets();
   const { payouts } = useAuth();
+
+  // Animation hooks
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(15)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
   
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Payouts</Text>
-      </View>
-      
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Earnings Hero Card */}
-        <View style={styles.earningsHero}>
-          <Text style={styles.heroSub}>Next Payout</Text>
-          <Text style={styles.heroAmount}>₹84,200</Text>
-          <Text style={styles.heroDate}>Due on 15 Jun 2026 · Bank: HDFC ***4521</Text>
-          
-          <View style={styles.heroMetrics}>
-            <View>
-              <Text style={styles.metricLabel}>This Month</Text>
-              <Text style={styles.metricValue}>₹1.2L</Text>
-            </View>
-            <View>
-              <Text style={styles.metricLabel}>Pending</Text>
-              <Text style={styles.metricValue}>₹42K</Text>
-            </View>
-            <View>
-              <Text style={styles.metricLabel}>YTD Total</Text>
-              <Text style={styles.metricValue}>₹8.4L</Text>
-            </View>
-          </View>
+      <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Payouts</Text>
         </View>
-
-        {/* Commission Structure Rate Grid */}
-        <Text style={styles.sectionTitle}>Your Commission Structure</Text>
-        <View style={styles.rateGrid}>
-          <View style={styles.rateCard}>
-            <Text style={[styles.rateValue, { color: '#DE1F26' }]}>1.2%</Text>
-            <Text style={styles.rateLabel}>Home Loan</Text>
-          </View>
-          <View style={styles.rateCard}>
-            <Text style={[styles.rateValue, { color: '#10B981' }]}>1.5%</Text>
-            <Text style={styles.rateLabel}>LAP</Text>
-          </View>
-          <View style={styles.rateCard}>
-            <Text style={[styles.rateValue, { color: '#F59E0B' }]}>1.0%</Text>
-            <Text style={styles.rateLabel}>MSME Loan</Text>
-          </View>
-          <View style={styles.rateCard}>
-            <Text style={[styles.rateValue, { color: '#06B6D4' }]}>0.8%</Text>
-            <Text style={styles.rateLabel}>Personal Loan</Text>
-          </View>
-        </View>
-
-        {/* Transaction History list */}
-        <Text style={styles.sectionTitle}>Transaction History</Text>
         
-        {payouts.map((p) => {
-          const isPaid = p.status === 'Paid';
-          return (
-            <View key={p.id} style={styles.payoutCard}>
-              <View style={styles.payoutTop}>
-                <View style={[styles.iconWrapper, isPaid ? styles.iconPaid : styles.iconPending]}>
-                  <MaterialCommunityIcons 
-                    name={isPaid ? "check-circle-outline" : "clock-outline"} 
-                    size={22} 
-                    color={isPaid ? "#16A34A" : "#D97706"} 
-                  />
-                </View>
-                <View style={styles.payoutInfo}>
-                  <Text style={styles.month}>{p.month} Payout</Text>
-                  <Text style={styles.details}>{p.leads} disbursed leads • {p.bank}</Text>
-                  <Text style={styles.date}>Date: {p.date}</Text>
-                </View>
-                <View style={styles.payoutAmountMeta}>
-                  <Text style={[styles.amount, { color: isPaid ? '#16A34A' : '#D97706' }]}>{p.amount}</Text>
-                  <View style={[styles.statusBadge, isPaid ? styles.badgePaid : styles.badgePending]}>
-                    <Text style={[styles.statusText, { color: isPaid ? '#16A34A' : '#D97706' }]}>{p.status}</Text>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          {/* Earnings Hero Card */}
+          <View style={styles.earningsHero}>
+            <Text style={styles.heroSub}>Next Payout</Text>
+            <Text style={styles.heroAmount}>₹84,200</Text>
+            <Text style={styles.heroDate}>Due on 15 Jun 2026 · Bank: HDFC ***4521</Text>
+            
+            <View style={styles.heroMetrics}>
+              <View>
+                <Text style={styles.metricLabel}>This Month</Text>
+                <Text style={styles.metricValue}>₹1.2L</Text>
+              </View>
+              <View>
+                <Text style={styles.metricLabel}>Pending</Text>
+                <Text style={styles.metricValue}>₹42K</Text>
+              </View>
+              <View>
+                <Text style={styles.metricLabel}>YTD Total</Text>
+                <Text style={styles.metricValue}>₹8.4L</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Commission Structure Rate Grid */}
+          <Text style={styles.sectionTitle}>Your Commission Structure</Text>
+          <View style={styles.rateGrid}>
+            <View style={styles.rateCard}>
+              <Text style={[styles.rateValue, { color: '#DE1F26' }]}>1.2%</Text>
+              <Text style={styles.rateLabel}>Home Loan</Text>
+            </View>
+            <View style={styles.rateCard}>
+              <Text style={[styles.rateValue, { color: '#10B981' }]}>1.5%</Text>
+              <Text style={styles.rateLabel}>LAP</Text>
+            </View>
+            <View style={styles.rateCard}>
+              <Text style={[styles.rateValue, { color: '#F59E0B' }]}>1.0%</Text>
+              <Text style={styles.rateLabel}>MSME Loan</Text>
+            </View>
+            <View style={styles.rateCard}>
+              <Text style={[styles.rateValue, { color: '#06B6D4' }]}>0.8%</Text>
+              <Text style={styles.rateLabel}>Personal Loan</Text>
+            </View>
+          </View>
+
+          {/* Transaction History list */}
+          <Text style={styles.sectionTitle}>Transaction History</Text>
+          
+          {payouts.map((p) => {
+            const isPaid = p.status === 'Paid';
+            return (
+              <View key={p.id} style={styles.payoutCard}>
+                <View style={styles.payoutTop}>
+                  <View style={[styles.iconWrapper, isPaid ? styles.iconPaid : styles.iconPending]}>
+                    <MaterialCommunityIcons 
+                      name={isPaid ? "check-circle-outline" : "clock-outline"} 
+                      size={22} 
+                      color={isPaid ? "#16A34A" : "#D97706"} 
+                    />
+                  </View>
+                  <View style={styles.payoutInfo}>
+                    <Text style={styles.month}>{p.month} Payout</Text>
+                    <Text style={styles.details}>{p.leads} disbursed leads • {p.bank}</Text>
+                    <Text style={styles.date}>Date: {p.date}</Text>
+                  </View>
+                  <View style={styles.payoutAmountMeta}>
+                    <Text style={[styles.amount, { color: isPaid ? '#16A34A' : '#D97706' }]}>{p.amount}</Text>
+                    <View style={[styles.statusBadge, isPaid ? styles.badgePaid : styles.badgePending]}>
+                      <Text style={[styles.statusText, { color: isPaid ? '#16A34A' : '#D97706' }]}>{p.status}</Text>
+                    </View>
                   </View>
                 </View>
               </View>
-            </View>
-          );
-        })}
-        
-        <View style={{ height: 100 }} />
-      </ScrollView>
+            );
+          })}
+          
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      </Animated.View>
     </View>
   );
 }
@@ -270,3 +291,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+

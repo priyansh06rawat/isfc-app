@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TextInput, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, KeyboardAvoidingView, Platform, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button } from '../../components/ui/Button';
 import { TopNav } from '../../components/ui/TopNav';
 import { useAuth } from '../../context/AuthContext';
@@ -12,7 +13,26 @@ export default function OtpScreen() {
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const inputs = useRef<Array<TextInput | null>>([]);
 
-  React.useEffect(() => {
+  // Animation hooks
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setOtp(['1', '2', '3', '4', '5', '6']);
     }, 800);
@@ -39,7 +59,6 @@ export default function OtpScreen() {
   const handleVerify = () => {
     const otpValue = otp.join('');
     if (otpValue.length === 6) {
-      // For this demo, route to partner type selection next
       router.push('/(auth)/partner-type' as any);
     }
   };
@@ -49,9 +68,11 @@ export default function OtpScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <TopNav title="OTP Verification" />
 
-        <View style={styles.content}>
+        <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
           <View style={styles.iconContainer}>
-            <Text style={styles.icon}>📱</Text>
+            <View style={styles.iconWrapper}>
+              <MaterialCommunityIcons name="cellphone-check" size={32} color="#DE1F26" />
+            </View>
             <Text style={styles.title}>Verify Your Number</Text>
             <Text style={styles.subtitle}>
               We've sent a 6-digit OTP to{'\n'}
@@ -80,7 +101,7 @@ export default function OtpScreen() {
           </View>
 
           <Button
-            title="Verify OTP ✓"
+            title="Verify OTP"
             onPress={handleVerify}
             disabled={otp.join('').length !== 6}
             style={styles.button}
@@ -95,10 +116,10 @@ export default function OtpScreen() {
 
           <View style={styles.demoNotice}>
             <Text style={styles.demoText}>
-              ⚡ Demo mode: OTP is pre-filled as <Text style={styles.demoTextBold}>123456</Text>
+              Demo mode: OTP is pre-filled as <Text style={styles.demoTextBold}>123456</Text>
             </Text>
           </View>
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -118,8 +139,13 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 40,
   },
-  icon: {
-    fontSize: 48,
+  iconWrapper: {
+    width: 64,
+    height: 64,
+    backgroundColor: '#FFF5F5',
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 16,
   },
   title: {

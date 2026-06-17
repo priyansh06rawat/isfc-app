@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text, Animated, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button } from '../../components/ui/Button';
 import { TopNav } from '../../components/ui/TopNav';
 import { useAuth } from '../../context/AuthContext';
@@ -9,6 +10,25 @@ import { useAuth } from '../../context/AuthContext';
 export default function KycSelfieScreen() {
   const { onboardingData, updateOnboardingData } = useAuth();
   const [isCapturing, setIsCapturing] = React.useState(false);
+
+  // Animation hooks
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
   const handleCapture = () => {
     setIsCapturing(true);
@@ -32,57 +52,61 @@ export default function KycSelfieScreen() {
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.content}>
-          <View style={styles.progressContainer}>
-            <View style={[styles.progressBar, { width: '50%' }]} />
-          </View>
-
-          <View style={styles.header}>
-            <Text style={styles.title}>Take a Selfie</Text>
-            <Text style={styles.subtitle}>We need your photo to verify your identity</Text>
-          </View>
-
-          <View style={styles.cameraFrame}>
-            <View style={[styles.cameraPlaceholder, onboardingData.isSelfieCaptured && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]}>
-              <Text style={styles.cameraIcon}>
-                {onboardingData.isSelfieCaptured ? '😊' : '👤'}
-              </Text>
+          <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+            <View style={styles.progressContainer}>
+              <View style={[styles.progressBar, { width: '50%' }]} />
             </View>
-            {onboardingData.isSelfieCaptured && (
-              <View style={styles.matchBadge}>
-                <Text style={styles.matchText}>✅ Face Match: 98.4%</Text>
+
+            <View style={styles.header}>
+              <Text style={styles.title}>Take a Selfie</Text>
+              <Text style={styles.subtitle}>We need your photo to verify your identity</Text>
+            </View>
+
+            <View style={styles.cameraFrame}>
+              <View style={[styles.cameraPlaceholder, onboardingData.isSelfieCaptured && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]}>
+                <MaterialCommunityIcons 
+                  name={onboardingData.isSelfieCaptured ? "account-check-outline" : "account-outline"} 
+                  size={64} 
+                  color={onboardingData.isSelfieCaptured ? "#10B981" : "#64748B"} 
+                />
               </View>
-            )}
-          </View>
-
-          <View style={styles.instructionsContainer}>
-            <View style={styles.instructionItem}>
-              <Text style={styles.instructionIcon}>☀️</Text>
-              <Text style={styles.instructionText}>Well lit</Text>
+              {onboardingData.isSelfieCaptured && (
+                <View style={styles.matchBadge}>
+                  <Text style={styles.matchText}>Face Match: 98.4%</Text>
+                </View>
+              )}
             </View>
-            <View style={styles.instructionItem}>
-              <Text style={styles.instructionIcon}>👓</Text>
-              <Text style={styles.instructionText}>No glasses</Text>
-            </View>
-            <View style={styles.instructionItem}>
-              <Text style={styles.instructionIcon}>😐</Text>
-              <Text style={styles.instructionText}>Look straight</Text>
-            </View>
-          </View>
 
-          <Button
-            title={onboardingData.isSelfieCaptured ? "✅ Selfie Captured" : "📸 Capture Selfie"}
-            variant={onboardingData.isSelfieCaptured ? "primary" : "outline"}
-            style={[styles.captureButton, onboardingData.isSelfieCaptured && styles.verifiedButton]}
-            isLoading={isCapturing}
-            onPress={handleCapture}
-            disabled={onboardingData.isSelfieCaptured}
-          />
+            <View style={styles.instructionsContainer}>
+              <View style={styles.instructionItem}>
+                <MaterialCommunityIcons name="weather-sunny" size={24} color="#64748B" style={{ marginBottom: 6 }} />
+                <Text style={styles.instructionText}>Well lit</Text>
+              </View>
+              <View style={styles.instructionItem}>
+                <MaterialCommunityIcons name="glasses" size={24} color="#64748B" style={{ marginBottom: 6 }} />
+                <Text style={styles.instructionText}>No glasses</Text>
+              </View>
+              <View style={styles.instructionItem}>
+                <MaterialCommunityIcons name="face-recognition" size={24} color="#64748B" style={{ marginBottom: 6 }} />
+                <Text style={styles.instructionText}>Look straight</Text>
+              </View>
+            </View>
 
-          <Button
-            title="Continue →"
-            onPress={handleContinue}
-            style={styles.button}
-          />
+            <Button
+              title={onboardingData.isSelfieCaptured ? "Selfie Captured" : "Capture Selfie"}
+              variant={onboardingData.isSelfieCaptured ? "primary" : "outline"}
+              style={[styles.captureButton, onboardingData.isSelfieCaptured && styles.verifiedButton]}
+              isLoading={isCapturing}
+              onPress={handleCapture}
+              disabled={onboardingData.isSelfieCaptured}
+            />
+
+            <Button
+              title="Continue"
+              onPress={handleContinue}
+              style={styles.button}
+            />
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -132,15 +156,12 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8F9FA',
     borderWidth: 4,
     borderColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-  },
-  cameraIcon: {
-    fontSize: 64,
   },
   instructionsContainer: {
     flexDirection: 'row',
@@ -150,10 +171,7 @@ const styles = StyleSheet.create({
   },
   instructionItem: {
     alignItems: 'center',
-  },
-  instructionIcon: {
-    fontSize: 24,
-    marginBottom: 8,
+    width: '30%',
   },
   instructionText: {
     fontSize: 12,

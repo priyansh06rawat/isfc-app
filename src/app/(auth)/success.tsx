@@ -1,12 +1,33 @@
-import React from 'react';
-import { View, StyleSheet, Text, Alert } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Text, Alert, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
 
 export default function SuccessScreen() {
   const { verifyOtp, onboardingData } = useAuth();
+
+  // Animation hooks
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 40,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
   const handleGoHome = () => {
     // Authenticate user so they can access protected dashboard tabs
@@ -20,10 +41,10 @@ export default function SuccessScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+      <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
         {/* Animated Check Ring */}
         <View style={styles.checkRing}>
-          <Text style={styles.checkMark}>✓</Text>
+          <MaterialCommunityIcons name="check" size={42} color="#00E5A0" />
         </View>
 
         <Text style={styles.title}>
@@ -45,13 +66,13 @@ export default function SuccessScreen() {
         {/* Status Rows */}
         <View style={styles.detailsContainer}>
           <View style={styles.detailRow}>
-            <Text style={styles.detailIcon}>📧</Text>
+            <MaterialCommunityIcons name="email-outline" size={18} color="#DE1F26" style={styles.detailIcon} />
             <Text style={styles.detailText}>
               Confirmation sent to <Text style={styles.boldText}>{onboardingData.email || 'rajesh@example.com'}</Text>
             </Text>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailIcon}>📱</Text>
+            <MaterialCommunityIcons name="cellphone" size={18} color="#DE1F26" style={styles.detailIcon} />
             <Text style={styles.detailText}>
               SMS alerts activated on <Text style={styles.boldText}>+91 98XXXXXXXX</Text>
             </Text>
@@ -72,7 +93,7 @@ export default function SuccessScreen() {
             onPress={handleTrack}
           />
         </View>
-      </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -97,11 +118,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 32,
-  },
-  checkMark: {
-    fontSize: 42,
-    color: '#00E5A0',
-    fontWeight: '800',
   },
   title: {
     fontSize: 28,
@@ -165,7 +181,6 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   detailIcon: {
-    fontSize: 18,
     marginRight: 12,
   },
   detailText: {

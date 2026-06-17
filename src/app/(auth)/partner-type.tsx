@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button } from '../../components/ui/Button';
 import { TopNav } from '../../components/ui/TopNav';
 import { useAuth } from '../../context/AuthContext';
@@ -9,37 +10,60 @@ import { useAuth } from '../../context/AuthContext';
 const PARTNERS = [
   {
     id: 'dsa',
-    icon: '👔',
+    icon: 'briefcase-outline',
     title: 'DSA Partner',
     subtitle: 'Direct Selling Agent with full commission structure',
     bgColor: '#EEF2FF',
+    iconColor: '#4F46E5',
   },
   {
     id: 'connector',
-    icon: '🔗',
+    icon: 'link-variant',
     title: 'Connector',
     subtitle: 'Refer leads and earn flat referral fee',
     bgColor: '#ECFEFF',
+    iconColor: '#0891B2',
   },
   {
     id: 'co-lender',
-    icon: '🏛️',
+    icon: 'bank-outline',
     title: 'Co-Lending',
     subtitle: 'NBFC/Bank co-lending arrangement',
     bgColor: '#ECFDF5',
+    iconColor: '#059669',
   },
   {
     id: 'builder',
-    icon: '🏗️',
+    icon: 'office-building',
     title: 'Builder',
     subtitle: 'Real estate developer partnership',
     bgColor: '#FFFBEB',
+    iconColor: '#D97706',
   },
 ];
 
 export default function PartnerTypeScreen() {
   const { onboardingData, updateOnboardingData } = useAuth();
   const selected = onboardingData.partnerType;
+
+  // Animation hooks
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
   const setSelected = (type: string | null) => {
     updateOnboardingData({ partnerType: type });
@@ -56,59 +80,61 @@ export default function PartnerTypeScreen() {
       <TopNav title="Partner Type" />
 
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>Choose Your Role</Text>
-          <Text style={styles.subtitle}>Select the type of partner you want to register as</Text>
-        </View>
-
-        <View style={styles.grid}>
-          {PARTNERS.map((partner) => (
-            <TouchableOpacity
-              key={partner.id}
-              style={[
-                styles.card,
-                selected === partner.id && styles.cardSelected,
-              ]}
-              onPress={() => setSelected(partner.id)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.iconContainer, { backgroundColor: partner.bgColor }]}>
-                <Text style={styles.icon}>{partner.icon}</Text>
-              </View>
-              <Text style={styles.cardTitle}>{partner.title}</Text>
-              <Text style={styles.cardSubtitle}>{partner.subtitle}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {selected === 'dsa' && (
-          <View style={styles.benefitsCard}>
-            <Text style={styles.benefitsTitle}>✨ DSA Partner Benefits</Text>
-            <View style={styles.benefitRow}>
-              <Text style={styles.benefitIcon}>✅</Text>
-              <Text style={styles.benefitText}>Earn up to 1.5% commission</Text>
-            </View>
-            <View style={styles.benefitRow}>
-              <Text style={styles.benefitIcon}>✅</Text>
-              <Text style={styles.benefitText}>Real-time lead tracking dashboard</Text>
-            </View>
-            <View style={styles.benefitRow}>
-              <Text style={styles.benefitIcon}>✅</Text>
-              <Text style={styles.benefitText}>Dedicated Relationship Manager</Text>
-            </View>
-            <View style={styles.benefitRow}>
-              <Text style={styles.benefitIcon}>✅</Text>
-              <Text style={styles.benefitText}>Monthly payout on 15th</Text>
-            </View>
+        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Choose Your Role</Text>
+            <Text style={styles.subtitle}>Select the type of partner you want to register as</Text>
           </View>
-        )}
 
-        <Button
-          title="Continue →"
-          onPress={handleContinue}
-          disabled={!selected}
-          style={styles.button}
-        />
+          <View style={styles.grid}>
+            {PARTNERS.map((partner) => (
+              <TouchableOpacity
+                key={partner.id}
+                style={[
+                  styles.card,
+                  selected === partner.id && styles.cardSelected,
+                ]}
+                onPress={() => setSelected(partner.id)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.iconContainer, { backgroundColor: partner.bgColor }]}>
+                  <MaterialCommunityIcons name={partner.icon as any} size={24} color={partner.iconColor} />
+                </View>
+                <Text style={styles.cardTitle}>{partner.title}</Text>
+                <Text style={styles.cardSubtitle}>{partner.subtitle}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {selected === 'dsa' && (
+            <View style={styles.benefitsCard}>
+              <Text style={styles.benefitsTitle}>DSA Partner Benefits</Text>
+              <View style={styles.benefitRow}>
+                <MaterialCommunityIcons name="check-circle" size={14} color="#0284C7" style={{ marginRight: 8 }} />
+                <Text style={styles.benefitText}>Earn up to 1.5% commission</Text>
+              </View>
+              <View style={styles.benefitRow}>
+                <MaterialCommunityIcons name="check-circle" size={14} color="#0284C7" style={{ marginRight: 8 }} />
+                <Text style={styles.benefitText}>Real-time lead tracking dashboard</Text>
+              </View>
+              <View style={styles.benefitRow}>
+                <MaterialCommunityIcons name="check-circle" size={14} color="#0284C7" style={{ marginRight: 8 }} />
+                <Text style={styles.benefitText}>Dedicated Relationship Manager</Text>
+              </View>
+              <View style={styles.benefitRow}>
+                <MaterialCommunityIcons name="check-circle" size={14} color="#0284C7" style={{ marginRight: 8 }} />
+                <Text style={styles.benefitText}>Monthly payout on 15th</Text>
+              </View>
+            </View>
+          )}
+
+          <Button
+            title="Continue"
+            onPress={handleContinue}
+            disabled={!selected}
+            style={styles.button}
+          />
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -169,9 +195,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 12,
   },
-  icon: {
-    fontSize: 24,
-  },
   cardTitle: {
     fontSize: 14,
     fontWeight: '700',
@@ -195,18 +218,16 @@ const styles = StyleSheet.create({
   },
   benefitsTitle: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#0284C7',
     marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   benefitRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
-  },
-  benefitIcon: {
-    fontSize: 12,
-    marginRight: 8,
   },
   benefitText: {
     fontSize: 12,
