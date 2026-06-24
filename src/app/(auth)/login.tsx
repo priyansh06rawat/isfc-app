@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Animated } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Animated, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 
 export default function LoginScreen() {
   const [phone, setPhone] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { setPhoneNumber } = useAuth();
   
   // Animation hooks
@@ -30,10 +31,18 @@ export default function LoginScreen() {
     ]).start();
   }, []);
 
-  const handleGetOtp = () => {
-    if (phone.length === 10) {
+  const handleGetOtp = async () => {
+    if (phone.length !== 10) return;
+    setIsLoading(true);
+    try {
+      const { AuthAPI } = await import('../../services/api');
+      await AuthAPI.requestOtp(phone);
       setPhoneNumber(phone);
       router.push('/(auth)/otp' as any);
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to send OTP. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -65,9 +74,9 @@ export default function LoginScreen() {
               />
 
               <Button
-                title="Get OTP"
+                title={isLoading ? 'Sending OTP...' : 'Get OTP'}
                 onPress={handleGetOtp}
-                disabled={phone.length !== 10}
+                disabled={phone.length !== 10 || isLoading}
                 style={styles.button}
               />
 

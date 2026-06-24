@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, KeyboardAvoidingView, Platform, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, TextInput, KeyboardAvoidingView, Platform, TouchableOpacity, Animated, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -8,7 +8,7 @@ import { TopNav } from '../../components/ui/TopNav';
 import { useAuth } from '../../context/AuthContext';
 
 export default function OtpScreen() {
-  const { phoneNumber } = useAuth();
+  const { phoneNumber, verifyOtp, isApiLoading } = useAuth();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const inputs = useRef<Array<TextInput | null>>([]);
@@ -56,10 +56,32 @@ export default function OtpScreen() {
     }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const otpValue = otp.join('');
-    if (otpValue.length === 6) {
-      router.push('/(auth)/partner-type' as any);
+    if (otpValue.length !== 6) return;
+
+    try {
+      const result = await verifyOtp(otpValue);
+      if (result.isNewPartner) {
+        // New user — go through onboarding
+        router.push('/(auth)/partner-type' as any);
+      } else {
+        // Existing partner — go to dashboard
+        router.replace('/(tabs)' as any);
+      }
+    } catch (e: any) {
+      Alert.alert('Verification Failed', e.message || 'Invalid OTP. Please try again.');
+    }
+  };
+
+  const handleResend = async () => {
+    if (!phoneNumber) return;
+    try {
+      const { AuthAPI } = await import('../../services/api');
+      await AuthAPI.requestOtp(phoneNumber);
+      Alert.alert('OTP Sent', `A new OTP has been sent to +91 ${phoneNumber}`);
+    } catch (e) {
+      Alert.alert('Error', 'Failed to resend OTP. Please try again.');
     }
   };
 
@@ -101,15 +123,15 @@ export default function OtpScreen() {
           </View>
 
           <Button
-            title="Verify OTP"
+            title={isApiLoading ? 'Verifying...' : 'Verify OTP'}
             onPress={handleVerify}
-            disabled={otp.join('').length !== 6}
+            disabled={otp.join('').length !== 6 || isApiLoading}
             style={styles.button}
           />
 
           <View style={styles.resendContainer}>
             <Text style={styles.resendText}>Didn't receive? </Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={handleResend} disabled={isApiLoading}>
               <Text style={styles.resendLink}>Resend OTP</Text>
             </TouchableOpacity>
           </View>

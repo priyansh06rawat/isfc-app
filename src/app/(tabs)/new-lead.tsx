@@ -11,7 +11,7 @@ import { TopNav } from '../../components/ui/TopNav';
 const PRESETS = ['10L', '25L', '50L', '75L', '1Cr'];
 
 export default function NewLeadScreen() {
-  const { addLead } = useAuth();
+  const { addLead, isApiLoading } = useAuth();
   
   const [form, setForm] = useState({
     name: '',
@@ -73,7 +73,7 @@ export default function NewLeadScreen() {
     updateForm('isDocUploaded', true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.name || !form.mobile || !form.employment || !form.product || !form.amount) {
       Alert.alert('Required Fields', 'Please fill in Name, Mobile, Employment, Product, and Loan Amount.');
       return;
@@ -83,13 +83,15 @@ export default function NewLeadScreen() {
       return;
     }
 
-    // Add lead dynamically to central context list
-    addLead({
+    await addLead({
       name: form.name,
       product: form.product,
       amount: formatAmount(form.amount),
       status: 'Processing',
       city: form.location || 'Mumbai',
+      mobile: form.mobile,
+      employment: form.employment,
+      cibil: form.cibil,
     });
 
     Alert.alert('Lead Created', 'Lead has been successfully submitted and listed.', [
@@ -269,8 +271,9 @@ export default function NewLeadScreen() {
             </TouchableOpacity>
 
             <Button
-              title="Submit Lead"
+              title={isApiLoading ? 'Submitting...' : 'Submit Lead'}
               onPress={handleSubmit}
+              disabled={isApiLoading}
               style={styles.submitBtn}
             />
 

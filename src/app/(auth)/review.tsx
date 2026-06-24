@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Text, Animated } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, Animated, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -8,7 +8,7 @@ import { TopNav } from '../../components/ui/TopNav';
 import { useAuth } from '../../context/AuthContext';
 
 export default function ReviewScreen() {
-  const { onboardingData } = useAuth();
+  const { onboardingData, submitRegistration, isApiLoading } = useAuth();
 
   // Animation hooks
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -29,8 +29,13 @@ export default function ReviewScreen() {
     ]).start();
   }, []);
 
-  const handleConfirm = () => {
-    router.push('/(auth)/success' as any);
+  const handleConfirm = async () => {
+    try {
+      await submitRegistration();
+      router.push('/(auth)/success' as any);
+    } catch (e: any) {
+      Alert.alert('Submission Failed', e.message || 'Please try again.');
+    }
   };
 
   return (
@@ -175,8 +180,9 @@ export default function ReviewScreen() {
           </View>
 
           <Button
-            title="Submit Application"
+            title={isApiLoading ? 'Submitting...' : 'Submit Application'}
             onPress={handleConfirm}
+            disabled={isApiLoading}
             style={styles.submitBtn}
           />
         </Animated.View>

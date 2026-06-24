@@ -7,7 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
 
 export default function SuccessScreen() {
-  const { verifyOtp, onboardingData } = useAuth();
+  const { onboardingData } = useAuth();
 
   // Animation hooks
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -30,8 +30,7 @@ export default function SuccessScreen() {
   }, []);
 
   const handleGoHome = () => {
-    // Authenticate user so they can access protected dashboard tabs
-    verifyOtp();
+    // User is already authenticated after registration — navigate directly to dashboard
     router.replace('/(tabs)');
   };
 
