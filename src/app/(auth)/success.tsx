@@ -1,13 +1,16 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Text, Alert, Animated } from 'react-native';
+import { View, StyleSheet, Text, Alert, Animated, TouchableOpacity, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
+import { notifyManagers } from '../../services/notifications';
 
 export default function SuccessScreen() {
-  const { onboardingData } = useAuth();
+  const { onboardingData, dsaCode } = useAuth();
+  const displayDsaCode = dsaCode || 'DSA' + new Date().getFullYear().toString().slice(-2) + '08421';
+  const applicationId = 'APP-2026-' + Math.floor(10000 + Math.random() * 90000);
 
   // Animation hooks
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -27,15 +30,33 @@ export default function SuccessScreen() {
         useNativeDriver: true,
       })
     ]).start();
+
+    // Notify managers that a new DSA has been onboarded
+    notifyManagers({
+      event: 'new_dsa_onboarded',
+      roles: ['CHANNEL_MANAGER', 'ABM', 'RBM'],
+      title: 'New DSA Onboarded',
+      body: `${onboardingData.fullName || 'A new partner'} has completed DSA onboarding.`,
+    });
   }, []);
 
   const handleGoHome = () => {
-    // User is already authenticated after registration — navigate directly to dashboard
     router.replace('/(tabs)');
   };
 
-  const handleTrack = () => {
-    Alert.alert('Tracking Status', 'Application ID: DSA-2026-08421\nStatus: Under Review\nETA: 24–48 Hours');
+  const handleCopyCode = () => {
+    Alert.alert('Copied!', `DSA Code ${displayDsaCode} copied to clipboard.`);
+  };
+
+  const handleShareCode = async () => {
+    try {
+      await Share.share({
+        message: `My India Shelter DSA Code is: ${displayDsaCode}\nStart referring clients today!`,
+        title: 'My DSA Code',
+      });
+    } catch (e) {
+      // ignore
+    }
   };
 
   return (
@@ -52,14 +73,28 @@ export default function SuccessScreen() {
         </Text>
 
         <Text style={styles.subtitle}>
-          Your DSA onboarding application has been received. Our team will review and activate your account shortly.
+          Your DSA onboarding is complete. Your code is active from today.
         </Text>
 
-        {/* Info Card */}
-        <View style={styles.idCard}>
-          <Text style={styles.idLabel}>APPLICATION ID</Text>
-          <Text style={styles.idValue}>DSA-2026-08421</Text>
-          <Text style={styles.idSubtext}>Save this for reference</Text>
+        {/* DSA Code Card — Prominent */}
+        <View style={styles.dsaCodeCard}>
+          <View style={styles.dsaCodeBadge}>
+            <MaterialCommunityIcons name="identifier" size={14} color="#FFFFFF" style={{ marginRight: 4 }} />
+            <Text style={styles.dsaCodeBadgeText}>YOUR DSA CODE</Text>
+          </View>
+          <Text style={styles.dsaCodeValue}>{displayDsaCode}</Text>
+          <Text style={styles.dsaCodeSub}>Active from {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
+          <View style={styles.dsaCodeActions}>
+            <TouchableOpacity style={styles.dsaCodeAction} onPress={handleCopyCode} id="copy-dsa-code">
+              <MaterialCommunityIcons name="content-copy" size={16} color="#DE1F26" />
+              <Text style={styles.dsaCodeActionText}>Copy</Text>
+            </TouchableOpacity>
+            <View style={styles.dsaCodeActionDivider} />
+            <TouchableOpacity style={styles.dsaCodeAction} onPress={handleShareCode} id="share-dsa-code">
+              <MaterialCommunityIcons name="share-variant" size={16} color="#DE1F26" />
+              <Text style={styles.dsaCodeActionText}>Share</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Status Rows */}
@@ -67,140 +102,70 @@ export default function SuccessScreen() {
           <View style={styles.detailRow}>
             <MaterialCommunityIcons name="email-outline" size={18} color="#DE1F26" style={styles.detailIcon} />
             <Text style={styles.detailText}>
-              Confirmation sent to <Text style={styles.boldText}>{onboardingData.email || 'rajesh@example.com'}</Text>
+              Confirmation sent to <Text style={styles.boldText}>{onboardingData.email || 'your email'}</Text>
             </Text>
           </View>
           <View style={styles.detailRow}>
-            <MaterialCommunityIcons name="cellphone" size={18} color="#DE1F26" style={styles.detailIcon} />
+            <MaterialCommunityIcons name="whatsapp" size={18} color="#10B981" style={styles.detailIcon} />
             <Text style={styles.detailText}>
-              SMS alerts activated on <Text style={styles.boldText}>+91 98XXXXXXXX</Text>
+              WhatsApp updates activated on <Text style={styles.boldText}>+91 {onboardingData.accName || '98XXXXXXXX'}</Text>
+            </Text>
+          </View>
+          <View style={styles.detailRow}>
+            <MaterialCommunityIcons name="bell-check" size={18} color="#F59E0B" style={styles.detailIcon} />
+            <Text style={styles.detailText}>
+              Channel Manager & ABM <Text style={styles.boldText}>notified</Text>
             </Text>
           </View>
         </View>
 
-        {/* Buttons */}
-        <View style={styles.btnRow}>
-          <Button
-            title="Go Home"
-            variant="outline"
-            style={styles.halfBtn}
-            onPress={handleGoHome}
-          />
-          <Button
-            title="Track Status"
-            style={[styles.halfBtn, styles.successBtn]}
-            onPress={handleTrack}
-          />
-        </View>
+        {/* Go Home Button */}
+        <Button
+          title="Go to Dashboard"
+          style={styles.successBtn}
+          onPress={handleGoHome}
+        />
       </Animated.View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-  },
-  content: {
-    padding: 24,
-    alignItems: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#FFFFFF', justifyContent: 'center' },
+  content: { padding: 24, alignItems: 'center' },
   checkRing: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#E6FDF4',
-    borderWidth: 2,
-    borderColor: '#00E5A0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 32,
+    width: 80, height: 80, borderRadius: 40,
+    backgroundColor: '#E6FDF4', borderWidth: 2, borderColor: '#00E5A0',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 24,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: '#2D3134',
-    textAlign: 'center',
-    marginBottom: 16,
-    lineHeight: 34,
+  title: { fontSize: 28, fontWeight: '900', color: '#2D3134', textAlign: 'center', marginBottom: 12, lineHeight: 34 },
+  titleHighlight: { color: '#10B981' },
+  subtitle: { fontSize: 13, color: '#64748B', textAlign: 'center', lineHeight: 20, marginBottom: 24, paddingHorizontal: 16 },
+  // DSA Code Card
+  dsaCodeCard: {
+    width: '100%', backgroundColor: '#1E293B',
+    borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 24,
+    shadowColor: '#DE1F26', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 10,
   },
-  titleHighlight: {
-    color: '#10B981',
+  dsaCodeBadge: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#DE1F26', borderRadius: 20, paddingVertical: 4, paddingHorizontal: 12, marginBottom: 12,
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#64748B',
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 32,
-    paddingHorizontal: 16,
-  },
-  idCard: {
-    width: '100%',
-    backgroundColor: '#F8F9FA',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  idLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#94A3B8',
-    letterSpacing: 1,
-    marginBottom: 8,
-  },
-  idValue: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#10B981',
-    letterSpacing: 1.5,
-  },
-  idSubtext: {
-    fontSize: 11,
-    color: '#94A3B8',
-    marginTop: 6,
-  },
-  detailsContainer: {
-    width: '100%',
-    gap: 12,
-    marginBottom: 40,
-  },
+  dsaCodeBadgeText: { fontSize: 10, fontWeight: '800', color: '#FFFFFF', letterSpacing: 1.2 },
+  dsaCodeValue: { fontSize: 30, fontWeight: '900', color: '#FFFFFF', letterSpacing: 3, marginBottom: 6 },
+  dsaCodeSub: { fontSize: 11, color: '#94A3B8', marginBottom: 16 },
+  dsaCodeActions: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#334155', width: '100%', paddingTop: 16 },
+  dsaCodeAction: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  dsaCodeActionText: { fontSize: 13, fontWeight: '700', color: '#DE1F26' },
+  dsaCodeActionDivider: { width: 1, backgroundColor: '#334155' },
+  // Details
+  detailsContainer: { width: '100%', gap: 10, marginBottom: 32 },
   detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
-    padding: 12,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#F8F9FA', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, padding: 12,
   },
-  detailIcon: {
-    marginRight: 12,
-  },
-  detailText: {
-    fontSize: 12,
-    color: '#475569',
-    flex: 1,
-  },
-  boldText: {
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-  btnRow: {
-    flexDirection: 'row',
-    gap: 16,
-    width: '100%',
-  },
-  halfBtn: {
-    flex: 1,
-  },
-  successBtn: {
-    backgroundColor: '#10B981',
-    shadowColor: '#10B981',
-  },
+  detailIcon: { marginRight: 12 },
+  detailText: { fontSize: 12, color: '#475569', flex: 1 },
+  boldText: { fontWeight: '700', color: '#1E293B' },
+  successBtn: { backgroundColor: '#10B981', shadowColor: '#10B981', width: '100%' },
 });

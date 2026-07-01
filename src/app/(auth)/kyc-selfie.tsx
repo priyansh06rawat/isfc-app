@@ -43,12 +43,12 @@ export default function KycSelfieScreen() {
       alert('Please capture live selfie for face match to proceed.');
       return;
     }
-    router.push('/(auth)/kyc-business' as any);
+    router.push('/(auth)/kyc-office-address' as any);
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopNav title="KYC Verification" step="Step 3/6" />
+      <TopNav title="KYC Verification" step="Step 3/10" />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.content}>

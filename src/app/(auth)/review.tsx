@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button } from '../../components/ui/Button';
 import { TopNav } from '../../components/ui/TopNav';
 import { useAuth } from '../../context/AuthContext';
+import { notifyBusinessManager, notifyManagers } from '../../services/notifications';
 
 export default function ReviewScreen() {
   const { onboardingData, submitRegistration, isApiLoading } = useAuth();
@@ -30,6 +31,35 @@ export default function ReviewScreen() {
   }, []);
 
   const handleConfirm = async () => {
+    // Check for missing critical documents and notify Business Manager
+    const missingDocs: string[] = [];
+    if (!onboardingData.panUploaded && !onboardingData.isPanVerified) missingDocs.push('PAN Card');
+    if (!onboardingData.aadhaarFrontUploaded && !onboardingData.isAadhaarVerified) missingDocs.push('Aadhaar Card');
+    if (!onboardingData.isSelfieCaptured) missingDocs.push('Selfie / Face Match');
+    if (!onboardingData.bankingStatementUploaded) missingDocs.push('Banking Statement');
+    if (!onboardingData.itrUploaded) missingDocs.push('ITR Acknowledgement');
+    if (!onboardingData.isBankVerified && !onboardingData.bankDocUploaded) missingDocs.push('Bank Verification (Penny Drop)');
+    if (!onboardingData.isAgreementSigned) missingDocs.push('DSA Empanelment Agreement');
+
+    if (missingDocs.length > 0) {
+      // Notify Business Manager automatically
+      notifyBusinessManager({
+        dsaName: onboardingData.fullName || 'Partner',
+        dsaPhone: '',
+        missingDocs,
+      });
+      Alert.alert(
+        'Missing Documents',
+        `The following documents are missing:\n• ${missingDocs.join('\n• ')}\n\nYour Business Manager has been notified.`,
+        [{ text: 'Continue Anyway', onPress: () => doSubmit() }, { text: 'Go Back', style: 'cancel' }]
+      );
+      return;
+    }
+
+    await doSubmit();
+  };
+
+  const doSubmit = async () => {
     try {
       await submitRegistration();
       router.push('/(auth)/success' as any);
@@ -171,11 +201,12 @@ export default function ReviewScreen() {
           {/* Expected Timeline Info Box */}
           <View style={styles.infoBox}>
             <View style={styles.infoTitleRow}>
-              <MaterialCommunityIcons name="clock-outline" size={18} color="#DE1F26" style={styles.infoTitleIcon} />
-              <Text style={styles.infoTitle}>Expected Timeline</Text>
+              <MaterialCommunityIcons name="clock-check-outline" size={18} color="#10B981" style={styles.infoTitleIcon} />
+              <Text style={[styles.infoTitle, { color: '#065F46' }]}>Same-Day DSA Code</Text>
             </View>
             <Text style={styles.infoText}>
-              Your onboarding application will be reviewed by India Shelter's partner team within <Text style={styles.infoHighlight}>1–2 working days</Text>. You will receive verification updates via SMS and email.
+              Your <Text style={[styles.infoHighlight, { color: '#065F46' }]}>DSA Code is generated instantly</Text> upon submission.
+              You can start referring leads immediately. RCU and CIBIL checks happen in the background.
             </Text>
           </View>
 

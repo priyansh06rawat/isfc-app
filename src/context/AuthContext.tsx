@@ -14,6 +14,11 @@ export interface Lead {
   mobile?: string;
   employment?: string;
   cibil?: string;
+  // RCU & CIBIL deviation tracking
+  rcuVerified?: boolean;
+  cibilVerified?: boolean;
+  hasDeviation?: boolean;
+  deviationReason?: string;
 }
 
 export interface Payout {
@@ -61,6 +66,26 @@ export interface OnboardingData {
   bankDocUploaded: boolean;
   isAgreementSigned: boolean;
   dsaCertificateUploaded: boolean;
+  // Office address / Udhyam MSME
+  officeAddress: string;
+  officeCity: string;
+  officePin: string;
+  officeState: string;
+  udhyamNumber: string;
+  isUdhyamVerified: boolean;
+  msmeCertUploaded: boolean;
+  // Banking statement (3/6 months)
+  bankStatementMonths: '3' | '6';
+  bankingStatementUploaded: boolean;
+  // ITR details
+  itrYear: string;
+  itrIncome: string;
+  itrUploaded: boolean;
+  // Enrollment letter (other DSA company)
+  enrollmentCompany: string;
+  enrollmentDsaCode: string;
+  enrollmentLetterUploaded: boolean;
+  enrollmentSkipped: boolean;
 }
 
 const DEFAULT_ONBOARDING: OnboardingData = {
@@ -98,6 +123,26 @@ const DEFAULT_ONBOARDING: OnboardingData = {
   bankDocUploaded: false,
   isAgreementSigned: false,
   dsaCertificateUploaded: false,
+  // Office / Udhyam
+  officeAddress: '',
+  officeCity: '',
+  officePin: '',
+  officeState: '',
+  udhyamNumber: '',
+  isUdhyamVerified: false,
+  msmeCertUploaded: false,
+  // Banking statement
+  bankStatementMonths: '6',
+  bankingStatementUploaded: false,
+  // ITR
+  itrYear: '',
+  itrIncome: '',
+  itrUploaded: false,
+  // Enrollment letter
+  enrollmentCompany: '',
+  enrollmentDsaCode: '',
+  enrollmentLetterUploaded: false,
+  enrollmentSkipped: false,
 };
 
 interface AuthContextType {
@@ -119,11 +164,16 @@ interface AuthContextType {
   onboardingData: OnboardingData;
   updateOnboardingData: (data: Partial<OnboardingData>) => void;
   submitRegistration: () => Promise<void>;
+  // DSA Code
+  dsaCode: string | null;
   // Settings
   notificationsEnabled: boolean;
   setNotificationsEnabled: (enabled: boolean) => void;
   darkModeEnabled: boolean;
   setDarkModeEnabled: (enabled: boolean) => void;
+  // Push token
+  pushToken: string | null;
+  setPushToken: (token: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -139,6 +189,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [onboardingData, setOnboardingData] = useState<OnboardingData>(DEFAULT_ONBOARDING);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
+  const [dsaCode, setDsaCode] = useState<string | null>(null);
+  const [pushToken, setPushToken] = useState<string | null>(null);
 
   // On mount: check for stored JWT → auto-login
   useEffect(() => {
@@ -271,6 +323,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       // Save new JWT (registration issues a new token)
       await saveToken(result.token);
+      // Store DSA code returned by backend (same-day generation)
+      if (result.partnerCode) {
+        setDsaCode(result.partnerCode);
+      }
       setIsAuthenticated(true);
 
       // Load initial data
@@ -289,6 +345,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLeads([]);
     setPayouts([]);
     setOnboardingData(DEFAULT_ONBOARDING);
+    setDsaCode(null);
+    setPushToken(null);
   };
 
   const updateOnboardingData = (data: Partial<OnboardingData>) => {
@@ -341,10 +399,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         onboardingData,
         updateOnboardingData,
         submitRegistration,
+        dsaCode,
         notificationsEnabled,
         setNotificationsEnabled,
         darkModeEnabled,
         setDarkModeEnabled,
+        pushToken,
+        setPushToken,
       }}
     >
       {children}
