@@ -52,7 +52,7 @@ export default function KycBusinessScreen() {
       alert('Please fetch Udhyam details or upload a valid business proof to proceed.');
       return;
     }
-    router.push('/(auth)/kyc-bank' as any);
+    router.push('/(auth)/kyc-agreement' as any);
   };
 
   const updateForm = (key: string, value: string) => {
@@ -61,13 +61,13 @@ export default function KycBusinessScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopNav title="KYC Verification" step="Step 4/6" />
+      <TopNav title="KYC Verification" step="Step 9/10" />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.content}>
           <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
             <View style={styles.progressContainer}>
-              <View style={[styles.progressBar, { width: '66%' }]} />
+              <View style={[styles.progressBar, { width: '90%' }]} />
             </View>
 
             <View style={styles.header}>

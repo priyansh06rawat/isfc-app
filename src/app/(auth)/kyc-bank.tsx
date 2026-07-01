@@ -53,7 +53,7 @@ export default function KycBankScreen() {
       alert('Please verify bank via Penny Drop or upload Bank Statement to proceed.');
       return;
     }
-    router.push('/(auth)/kyc-agreement' as any);
+    router.push('/(auth)/kyc-itr' as any);
   };
 
   const updateForm = (key: string, value: string) => {
@@ -62,13 +62,13 @@ export default function KycBankScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopNav title="KYC Verification" step="Step 5/6" />
+      <TopNav title="KYC Verification" step="Step 6/10" />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.content}>
           <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
             <View style={styles.progressContainer}>
-              <View style={[styles.progressBar, { width: '83%' }]} />
+              <View style={[styles.progressBar, { width: '60%' }]} />
             </View>
 
             <View style={styles.header}>

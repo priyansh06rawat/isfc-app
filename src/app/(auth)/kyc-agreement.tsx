@@ -76,7 +76,7 @@ export default function KycAgreementScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopNav title="KYC Verification" step="Step 6/6" />
+      <TopNav title="KYC Verification" step="Step 10/10" />
 
       <ScrollView contentContainerStyle={styles.content}>
         <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text, TouchableOpacity, Animated } from 'react-native';
+import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text, TouchableOpacity, Animated, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -13,6 +13,17 @@ const ITR_YEARS = ['AY 2024-25', 'AY 2023-24', 'AY 2022-23'];
 
 export default function KycItrScreen() {
   const { onboardingData, updateOnboardingData } = useAuth();
+
+  const handleBypass = () => {
+    Alert.alert(
+      'Bypass Bank Verification',
+      'Would you like to temporarily bypass bank verification for testing purposes?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Bypass', onPress: () => updateOnboardingData({ isBankVerified: true }) }
+      ]
+    );
+  };
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
@@ -67,13 +78,13 @@ export default function KycItrScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopNav title="KYC Verification" step="Step 6/10" />
+      <TopNav title="KYC Verification" step="Step 7/10" />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.content}>
           <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
             <View style={styles.progressContainer}>
-              <View style={[styles.progressBar, { width: '60%' }]} />
+              <View style={[styles.progressBar, { width: '70%' }]} />
             </View>
 
             <View style={styles.header}>
@@ -85,16 +96,18 @@ export default function KycItrScreen() {
 
             {/* Penny Drop Gate Banner */}
             {!isPennDropDone ? (
-              <Animated.View style={[styles.gateBanner, { transform: [{ translateX: lockAnim }] }]}>
-                <MaterialCommunityIcons name="lock" size={22} color="#DC2626" style={{ marginRight: 12 }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.gateTitle}>Bank Verification Required</Text>
-                  <Text style={styles.gateText}>
-                    ITR details are locked until your bank account is verified via Penny Drop.
-                    Please go back and complete bank verification first.
-                  </Text>
-                </View>
-              </Animated.View>
+              <TouchableOpacity activeOpacity={0.9} onPress={handleBypass} style={{ marginBottom: 20 }}>
+                <Animated.View style={[styles.gateBanner, { transform: [{ translateX: lockAnim }], marginBottom: 0 }]}>
+                  <MaterialCommunityIcons name="lock" size={22} color="#DC2626" style={{ marginRight: 12 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.gateTitle}>Bank Verification Required (Tap to Bypass for Test)</Text>
+                    <Text style={styles.gateText}>
+                      ITR details are locked until your bank account is verified via Penny Drop.
+                      Please go back and complete bank verification first.
+                    </Text>
+                  </View>
+                </Animated.View>
+              </TouchableOpacity>
             ) : (
               <View style={styles.unlockBanner}>
                 <MaterialCommunityIcons name="lock-open-variant" size={18} color="#059669" style={{ marginRight: 8 }} />

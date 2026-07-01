@@ -46,7 +46,7 @@ export default function KycBankingStatementScreen() {
       alert(`Please upload your ${onboardingData.bankStatementMonths}-month banking statement to proceed.`);
       return;
     }
-    router.push('/(auth)/kyc-itr' as any);
+    router.push('/(auth)/kyc-bank' as any);
   };
 
   const selected = onboardingData.bankStatementMonths;
