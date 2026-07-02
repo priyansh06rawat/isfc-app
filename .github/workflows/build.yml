@@ -6,10 +6,20 @@ on:
       - main
   workflow_dispatch:
 
+# Auto-cancel any in-progress run when a new push arrives
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build APK
     runs-on: ubuntu-latest
+
+    env:
+      # Fix OOM Metaspace — enforced for all Gradle tasks in this workflow
+      GRADLE_OPTS: "-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8"
+      JAVA_OPTS: "-Xmx4096m -XX:MaxMetaspaceSize=1024m"
 
     steps:
       - name: Checkout Code
@@ -31,15 +41,14 @@ jobs:
           echo "EXPO_PUBLIC_SF_CLIENT_ID=${{ secrets.EXPO_PUBLIC_SF_CLIENT_ID }}" >> .env
           echo "EXPO_PUBLIC_SF_CLIENT_SECRET=${{ secrets.EXPO_PUBLIC_SF_CLIENT_SECRET }}" >> .env
 
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Generate Native Android Code
-        run: npx expo prebuild --platform android --clean
+      - name: Set Android SDK Permissions
+        run: chmod +x android/gradlew
 
       - name: Ensure Debug Keystore Exists
         working-directory: android/app
@@ -51,12 +60,17 @@ jobs:
               -dname "CN=Android Debug,O=Android,C=US" -noprompt
           fi
 
-      - name: Build Android APK
+      - name: Build Android APK (arm64-v8a)
         working-directory: android
-        run: ./gradlew assembleRelease
+        run: |
+          ./gradlew assembleRelease \
+            --no-daemon \
+            -PreactNativeArchitectures=arm64-v8a \
+            -Porg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release.apk
           path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
