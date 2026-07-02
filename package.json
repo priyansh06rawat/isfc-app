@@ -29,8 +29,11 @@
   },
   "scripts": {
     "start": "expo start",
+    "start:native": "react-native start",
     "android": "expo run:android",
+    "android:rn": "react-native run-android",
     "ios": "expo run:ios",
+    "ios:rn": "react-native run-ios",
     "web": "expo start --web"
   },
   "private": true
