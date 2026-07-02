@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Alert, Switch, Animated } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Alert, Switch, Animated, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
@@ -40,7 +40,9 @@ export default function ProfileScreen() {
   };
 
   const handleCallSupport = () => {
-    Alert.alert('Call Support', 'Dialing Toll Free: 1800-XXX-XXXX');
+    Linking.openURL('tel:1234567890').catch(() => {
+      Alert.alert('Call Support', 'Dialing Support: 1234567890...');
+    });
   };
 
   const handleViewAgreement = () => {
@@ -214,7 +216,7 @@ export default function ProfileScreen() {
             <TouchableOpacity style={styles.rowClick} onPress={handleCallSupport}>
               <View style={styles.labelRow}>
                 <MaterialCommunityIcons name="phone-outline" size={16} color="#DE1F26" style={styles.iconMargin} />
-                <Text style={styles.rowLabel}>Support: 1800-XXX-XXXX</Text>
+                <Text style={styles.rowLabel}>Support: 1234567890</Text>
               </View>
               <Text style={styles.arrowText}>Call</Text>
             </TouchableOpacity>

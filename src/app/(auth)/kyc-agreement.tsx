@@ -17,6 +17,18 @@ export default function KycAgreementScreen() {
 
   // Digital Signature coordinates
   const [sigPoints, setSigPoints] = useState<{ x: number; y: number }[]>([]);
+  const [scrollEnabled, setScrollEnabled] = useState(true);
+
+  const autoSign = () => {
+    const points: { x: number; y: number }[] = [];
+    for (let i = 0; i < 60; i++) {
+      points.push({ 
+        x: 40 + i * 3, 
+        y: 75 + Math.sin(i / 4) * 20 + (i > 30 ? (i - 30) * 0.5 : 0) 
+      });
+    }
+    setSigPoints(points);
+  };
 
   // Animation hooks
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -78,7 +90,7 @@ export default function KycAgreementScreen() {
     <SafeAreaView style={styles.container}>
       <TopNav title="KYC Verification" step="Step 10/10" />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView scrollEnabled={scrollEnabled} contentContainerStyle={styles.content}>
         <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
           <View style={styles.progressContainer}>
             <View style={[styles.progressBar, { width: '100%' }]} />
@@ -169,8 +181,26 @@ export default function KycAgreementScreen() {
           <Text style={styles.sectionTitle}>E-Signature (Draw in box below) *</Text>
           <View 
             style={styles.sigPad}
-            onTouchStart={handleTouch}
-            onTouchMove={handleTouch}
+            onStartShouldSetResponder={() => {
+              setScrollEnabled(false);
+              return true;
+            }}
+            onMoveShouldSetResponder={() => true}
+            onResponderGrant={(event) => {
+              const { locationX, locationY } = event.nativeEvent;
+              if (locationX && locationY) {
+                setSigPoints([{ x: locationX, y: locationY }]);
+              }
+            }}
+            onResponderMove={(event) => {
+              const { locationX, locationY } = event.nativeEvent;
+              if (locationX && locationY) {
+                setSigPoints((prev) => [...prev, { x: locationX, y: locationY }]);
+              }
+            }}
+            onResponderRelease={() => {
+              setScrollEnabled(true);
+            }}
           >
             {sigPoints.length === 0 ? (
               <View style={styles.sigPlaceholder}>
@@ -195,9 +225,16 @@ export default function KycAgreementScreen() {
             )}
           </View>
 
-          <TouchableOpacity onPress={clearSignature} style={styles.clearBtn} activeOpacity={0.6}>
-            <Text style={styles.clearBtnText}>Clear Signature</Text>
-          </TouchableOpacity>
+          <View style={styles.sigActionRow}>
+            <TouchableOpacity onPress={autoSign} style={styles.sigActionBtn} activeOpacity={0.6} id="auto-sign">
+              <MaterialCommunityIcons name="pencil-outline" size={16} color="#059669" style={{ marginRight: 4 }} />
+              <Text style={[styles.sigActionText, { color: '#059669' }]}>Auto-Sign (Test)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={clearSignature} style={styles.sigActionBtn} activeOpacity={0.6} id="clear-signature">
+              <MaterialCommunityIcons name="trash-can-outline" size={16} color="#EF4444" style={{ marginRight: 4 }} />
+              <Text style={[styles.sigActionText, { color: '#EF4444' }]}>Clear Signature</Text>
+            </TouchableOpacity>
+          </View>
 
           <Button
             title="Submit & Review Application"
@@ -357,5 +394,25 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 8,
     marginBottom: 32,
+  },
+  sigActionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    marginBottom: 24,
+  },
+  sigActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    backgroundColor: '#F8F9FA',
+  },
+  sigActionText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

@@ -358,8 +358,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const created = await LeadAPI.createLead({
         name: newLead.name,
-        mobile: '',
-        employment: '',
+        mobile: newLead.mobile || '',
+        employment: newLead.employment || '',
         product: newLead.product,
         amount: parseLoanAmount(newLead.amount),
         location: newLead.city,

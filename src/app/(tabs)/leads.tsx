@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, Animated, RefreshControl } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
@@ -10,7 +10,35 @@ const FILTERS = ['All', 'Processing', 'Approved', 'Pending', 'Disbursed', 'Rejec
 
 export default function LeadsScreen() {
   const insets = useSafeAreaInsets();
-  const { leads } = useAuth();
+  const { leads, fetchLeads } = useAuth();
+  
+  const [refreshing, setRefreshing] = useState(false);
+  const spinValue = useRef(new Animated.Value(0)).current;
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    Animated.loop(
+      Animated.timing(spinValue, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      })
+    ).start();
+
+    try {
+      await fetchLeads();
+    } catch (e) {
+      console.warn('Leads refresh failed:', e);
+    } finally {
+      spinValue.setValue(0);
+      setRefreshing(false);
+    }
+  };
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
   
   const [search, setSearch] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
@@ -91,8 +119,20 @@ export default function LeadsScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Leads</Text>
-          <Text style={styles.leadsCount}>{filteredLeads.length} lead{filteredLeads.length !== 1 ? 's' : ''}</Text>
+          <View>
+            <Text style={styles.headerTitle}>My Leads</Text>
+            <Text style={styles.leadsCount}>{filteredLeads.length} lead{filteredLeads.length !== 1 ? 's' : ''}</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.refreshBtn} 
+            onPress={handleRefresh}
+            disabled={refreshing}
+            id="refresh-leads-btn"
+          >
+            <Animated.View style={{ transform: [{ rotate: spin }] }}>
+              <MaterialCommunityIcons name="refresh" size={24} color="#DE1F26" />
+            </Animated.View>
+          </TouchableOpacity>
         </View>
         
         {/* Search Bar */}
@@ -144,7 +184,12 @@ export default function LeadsScreen() {
 
         {/* Leads List with Fade Transition */}
         <Animated.View style={{ flex: 1, opacity: listOpacity }}>
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+          <ScrollView 
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#DE1F26']} />
+            }
+          >
             {filteredLeads.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <MaterialCommunityIcons name="database-search-outline" size={48} color="#94A3B8" style={{ marginBottom: 12 }} />
@@ -389,5 +434,10 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
     zIndex: 99,
+  },
+  refreshBtn: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#FFF5F5',
   },
 });

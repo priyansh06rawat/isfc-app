@@ -337,39 +337,29 @@ export default function DashboardScreen() {
               </View>
 
               {/* Relationship Manager Section */}
-              <Text style={styles.sheetSectionTitle}>Your Relationship Manager</Text>
+              <Text style={styles.sheetSectionTitle}>Relationship Support</Text>
               <View style={styles.rmCard}>
                 <View style={styles.rmAvatar}>
-                  <Text style={styles.rmAvatarText}>VM</Text>
+                  <Text style={styles.rmAvatarText}>RS</Text>
                 </View>
                 <View style={styles.rmInfo}>
-                  <Text style={styles.rmName}>Vikram Malhotra</Text>
-                  <Text style={styles.rmRole}>Branch Partner Manager</Text>
-                  <Text style={styles.rmBranch}>Mumbai Hub • India Shelter</Text>
+                  <Text style={styles.rmName}>Support Desk</Text>
+                  <Text style={styles.rmRole}>DSA Helpline</Text>
+                  <Text style={styles.rmBranch}>India Shelter Support</Text>
                 </View>
               </View>
               <View style={styles.rmContactButtons}>
                 <TouchableOpacity 
-                  style={styles.rmContactBtn} 
+                  style={[styles.rmContactBtn, { width: '100%' }]} 
                   onPress={() => {
-                    Linking.openURL('tel:+919876543210').catch(() => {
-                      Alert.alert('Calling VM', 'Dialing +91 98765 43210...');
+                    Linking.openURL('tel:1234567890').catch(() => {
+                      Alert.alert('Calling Support', 'Dialing 1234567890...');
                     });
                   }}
+                  id="call-rm-support"
                 >
                   <MaterialCommunityIcons name="phone" size={18} color="#DE1F26" style={{ marginRight: 6 }} />
-                  <Text style={styles.rmContactBtnText}>Call RM</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.rmContactBtn} 
-                  onPress={() => {
-                    Linking.openURL('mailto:vikram.m@indiashelter.in').catch(() => {
-                      Alert.alert('Email RM', 'Opening email composer for vikram.m@indiashelter.in...');
-                    });
-                  }}
-                >
-                  <MaterialCommunityIcons name="email-outline" size={18} color="#DE1F26" style={{ marginRight: 6 }} />
-                  <Text style={styles.rmContactBtnText}>Email RM</Text>
+                  <Text style={styles.rmContactBtnText}>Call Support (1234567890)</Text>
                 </TouchableOpacity>
               </View>
 

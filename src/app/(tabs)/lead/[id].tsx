@@ -173,6 +173,11 @@ export default function LeadDetailsScreen() {
             </View>
             <View style={styles.divider} />
             <View style={styles.row}>
+              <Text style={styles.label}>Mobile Number</Text>
+              <Text style={styles.value}>{lead.mobile || 'N/A'}</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.row}>
               <Text style={styles.label}>Created On</Text>
               <Text style={styles.value}>{lead.date || 'N/A'}</Text>
             </View>
