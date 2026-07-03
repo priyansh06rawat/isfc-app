@@ -77,8 +77,8 @@ export default function OtpScreen() {
   const handleResend = async () => {
     if (!phoneNumber) return;
     try {
-      const { AuthAPI } = await import('../../services/api');
-      await AuthAPI.requestOtp(phoneNumber);
+      const { ConnectorAPI } = await import('../../services/api');
+      await ConnectorAPI.requestOtp(phoneNumber);
       Alert.alert('OTP Sent', `A new OTP has been sent to +91 ${phoneNumber}`);
     } catch (e) {
       Alert.alert('Error', 'Failed to resend OTP. Please try again.');

@@ -35,8 +35,8 @@ export default function LoginScreen() {
     if (phone.length !== 10) return;
     setIsLoading(true);
     try {
-      const { AuthAPI } = await import('../../services/api');
-      await AuthAPI.requestOtp(phone);
+      const { ConnectorAPI } = await import('../../services/api');
+      await ConnectorAPI.requestOtp(phone);
       setPhoneNumber(phone);
       router.push('/(auth)/otp' as any);
     } catch (e: any) {
