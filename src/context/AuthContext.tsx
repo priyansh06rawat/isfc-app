@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { AuthAPI, LeadAPI, PayoutAPI, PartnerAPI } from '../services/api';
+import { ConnectorAPI, ConnectorRecord, LeadAPI, PayoutAPI } from '../services/api';
 import { saveToken, getToken, removeToken, savePartnerData, getPartnerData, clearPartnerData } from '../services/storage';
 
 export interface Lead {
@@ -166,6 +166,8 @@ interface AuthContextType {
   submitRegistration: () => Promise<void>;
   // DSA Code
   dsaCode: string | null;
+  // Connector__c record ID (Salesforce)
+  connectorSfId: string | null;
   // Settings
   notificationsEnabled: boolean;
   setNotificationsEnabled: (enabled: boolean) => void;
@@ -190,6 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   const [dsaCode, setDsaCode] = useState<string | null>(null);
+  const [connectorSfId, setConnectorSfId] = useState<string | null>(null);
   const [pushToken, setPushToken] = useState<string | null>(null);
 
   // On mount: check for stored JWT → auto-login
@@ -266,7 +269,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   /**
-   * Verify OTP — calls the backend, saves JWT, loads profile + leads + payouts.
+   * Verify OTP — uses ConnectorAPI (Connector__c in Salesforce).
    * Returns { isNewPartner } so the caller can route to registration if needed.
    */
   const verifyOtp = async (otp: string): Promise<{ isNewPartner: boolean }> => {
@@ -274,62 +277,85 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setIsApiLoading(true);
     try {
-      // Step 1: Request OTP first (in case screen navigated without calling it)
-      try {
-        await AuthAPI.requestOtp(phoneNumber);
-      } catch (_) {
-        // Ignore — OTP may have been requested already on the login screen
-      }
+      // Verify OTP against Connector__c record via Apex REST
+      const result = await ConnectorAPI.verifyOtp(phoneNumber, otp);
 
-      // Step 2: Verify OTP
-      const result = await AuthAPI.verifyOtp(phoneNumber, otp);
-
-      // Step 3: Save JWT
+      // Save token (SF access token used as session token)
       await saveToken(result.token);
 
-      // Step 4: If existing partner, save profile data
-      if (!result.isNewPartner && result.partner) {
-        await savePartnerData(result.partner);
-        const p = result.partner;
+      // If existing connector — restore profile into onboarding state
+      if (!result.isNewConnector && result.connector) {
+        const c = result.connector;
+        setConnectorSfId(c.id || null);
+        await savePartnerData(c as object);
         setOnboardingData((prev) => ({
           ...prev,
-          fullName: p.name || '',
-          email: p.email || '',
-          city: p.city || '',
-          pan: p.pan || '',
+          fullName:    c.fullName  || '',
+          email:       c.email     || '',
+          pan:         c.pan       || '',
+          accNumber:   c.bankAccount || '',
+          ifsc:        c.ifsc      || '',
+          occupation:  c.occupation || prev.occupation,
+          officeAddress: c.officeAddress || '',
+          officePin:   c.officePincode || '',
         }));
+        if (c.connectorId) setDsaCode(c.connectorId);
         setIsAuthenticated(true);
-
-        // Load leads + payouts asynchronously
         fetchLeadsInBackground();
         fetchPayoutsInBackground();
       }
 
-      return { isNewPartner: result.isNewPartner };
+      return { isNewPartner: result.isNewConnector };
     } finally {
       setIsApiLoading(false);
     }
   };
 
   /**
-   * Submit registration after KYC onboarding — calls backend to create partner in Salesforce.
+   * Submit registration after KYC onboarding — creates Connector__c record in Salesforce.
+   * Maps all onboarding fields to Connector__c API names.
    */
   const submitRegistration = async () => {
     setIsApiLoading(true);
     try {
-      const result = await AuthAPI.register({
-        ...onboardingData,
-        phone: phoneNumber || '',
-      });
-      // Save new JWT (registration issues a new token)
-      await saveToken(result.token);
-      // Store DSA code returned by backend (same-day generation)
-      if (result.partnerCode) {
-        setDsaCode(result.partnerCode);
-      }
-      setIsAuthenticated(true);
+      const connectorPayload: ConnectorRecord = {
+        fullName:              onboardingData.fullName,
+        mobile:                phoneNumber || '',
+        email:                 onboardingData.email,
+        pan:                   onboardingData.pan,
+        pincode:               onboardingData.pin,
+        residentialAddress:    onboardingData.address,
+        officeAddress:         onboardingData.officeAddress,
+        officePincode:         onboardingData.officePin,
+        occupation:            onboardingData.occupation,
+        occupationYear:        onboardingData.experience,
+        companyGST:            onboardingData.gstin,
+        company:               onboardingData.businessName,
+        bankAccount:           onboardingData.accNumber,
+        nameInBank:            onboardingData.accName,
+        ifsc:                  onboardingData.ifsc,
+        idProofType:           'Aadhaar',
+        idProofNumber:         onboardingData.aadhaarLast4,
+        addressProofType:      onboardingData.businessDocType,
+        addressProofNumber:    onboardingData.gstin,
+        connectorType:         onboardingData.partnerType || 'DSA',
+        leadStatus:            'Onboarding',
+        status:                'Pending',
+        verifiedTermsCondition: true,
+        notificationId:        pushToken || '',
+        notificationEnable:    !!pushToken,
+      };
 
-      // Load initial data
+      const result = await ConnectorAPI.createConnector(connectorPayload);
+
+      // Store Salesforce record ID and DSA code
+      setConnectorSfId(result.id);
+      if (result.connectorId) setDsaCode(result.connectorId);
+
+      // Save connector profile locally
+      await savePartnerData(connectorPayload as object);
+
+      setIsAuthenticated(true);
       fetchLeadsInBackground();
       fetchPayoutsInBackground();
     } finally {
@@ -346,6 +372,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setPayouts([]);
     setOnboardingData(DEFAULT_ONBOARDING);
     setDsaCode(null);
+    setConnectorSfId(null);
     setPushToken(null);
   };
 
@@ -400,6 +427,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updateOnboardingData,
         submitRegistration,
         dsaCode,
+        connectorSfId,
         notificationsEnabled,
         setNotificationsEnabled,
         darkModeEnabled,
