@@ -1,0 +1,11 @@
+{
+  "packageDirectories": [
+    {
+      "path": "salesforce",
+      "default": true
+    }
+  ],
+  "name": "isfc-app",
+  "namespace": "",
+  "sourceApiVersion": "59.0"
+}
