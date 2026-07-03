@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Animated } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Animated, Modal, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -10,8 +10,15 @@ import { TopNav } from '../../components/ui/TopNav';
 
 const PRESETS = ['10L', '25L', '50L', '75L', '1Cr'];
 
+const EMPLOYMENT_OPTIONS = ['Salaried', 'Self-Employed', 'Business Owner', 'Financial Advisor'];
+const PRODUCT_OPTIONS = ['Home Loan', 'LAP', 'MSME Loan', 'Business Loan'];
+const CIBIL_OPTIONS = ['750+ (Excellent)', '700-749 (Good)', '650-699 (Fair)', 'Below 650 (Poor)'];
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const YEARS = Array.from({ length: 60 }, (_, i) => new Date().getFullYear() - 18 - i); // Minimum 18 years old
+
 export default function NewLeadScreen() {
-  const { addLead, isApiLoading } = useAuth();
+  const { addLead, isApiLoading, darkModeEnabled } = useAuth();
   
   const [form, setForm] = useState({
     name: '',
@@ -28,6 +35,17 @@ export default function NewLeadScreen() {
     cibil: '750+ (Excellent)',
     isDocUploaded: false,
   });
+
+  // Dropdown Picker Modal states
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [pickerTitle, setPickerTitle] = useState('');
+  const [pickerOptions, setPickerOptions] = useState<string[]>([]);
+  const [pickerField, setPickerField] = useState<'employment' | 'product' | 'cibil' | null>(null);
+
+  // Calendar Modal states
+  const [calendarVisible, setCalendarVisible] = useState(false);
+  const [calendarYear, setCalendarYear] = useState(new Date().getFullYear() - 25);
+  const [calendarMonth, setCalendarMonth] = useState(0);
 
   // Animation hooks
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -50,6 +68,19 @@ export default function NewLeadScreen() {
 
   const updateForm = (key: string, value: any) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // DOB Keyboard formatting (DD/MM/YYYY)
+  const handleDobChange = (text: string) => {
+    let cleaned = text.replace(/[^0-9]/g, '');
+    let formatted = cleaned;
+    if (cleaned.length > 2) {
+      formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2);
+    }
+    if (cleaned.length > 4) {
+      formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4) + '/' + cleaned.slice(4, 8);
+    }
+    updateForm('dob', formatted);
   };
 
   const handlePreset = (preset: string) => {
@@ -99,16 +130,88 @@ export default function NewLeadScreen() {
     ]);
   };
 
+  // Open Dropdown Modal helper
+  const openDropdown = (type: 'employment' | 'product' | 'cibil') => {
+    setPickerField(type);
+    if (type === 'employment') {
+      setPickerTitle('Select Employment Type');
+      setPickerOptions(EMPLOYMENT_OPTIONS);
+    } else if (type === 'product') {
+      setPickerTitle('Select Product Interest');
+      setPickerOptions(PRODUCT_OPTIONS);
+    } else {
+      setPickerTitle('Select Estimated CIBIL Score');
+      setPickerOptions(CIBIL_OPTIONS);
+    }
+    setPickerVisible(true);
+  };
+
+  const handleOptionSelect = (option: string) => {
+    if (pickerField) {
+      updateForm(pickerField, option);
+    }
+    setPickerVisible(false);
+  };
+
+  // Calendar Day generation logic
+  const getDaysArray = () => {
+    const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+    const firstDayOffset = new Date(calendarYear, calendarMonth, 1).getDay();
+    const arr: (number | null)[] = [];
+    for (let i = 0; i < firstDayOffset; i++) {
+      arr.push(null);
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      arr.push(i);
+    }
+    return arr;
+  };
+
+  const handleSelectDay = (day: number) => {
+    const d = String(day).padStart(2, '0');
+    const m = String(calendarMonth + 1).padStart(2, '0');
+    const dobStr = `${d}/${m}/${calendarYear}`;
+    updateForm('dob', dobStr);
+    setCalendarVisible(false);
+  };
+
+  // Render standard select input box
+  const renderSelectField = (label: string, value: string, placeholder: string, onPress: () => void, required = false) => {
+    return (
+      <View style={styles.selectFieldContainer}>
+        <Text style={[styles.selectLabel, darkModeEnabled && styles.textDark]}>
+          {label}
+          {required && <Text style={styles.requiredAsterisk}> *</Text>}
+        </Text>
+        <TouchableOpacity 
+          style={[styles.selectBox, darkModeEnabled && styles.cardDark]} 
+          onPress={onPress}
+          activeOpacity={0.75}
+        >
+          <Text style={[
+            styles.selectValue, 
+            !value && styles.selectPlaceholder, 
+            darkModeEnabled && value && styles.textDark
+          ]}>
+            {value || placeholder}
+          </Text>
+          <MaterialCommunityIcons name="chevron-down" size={22} color={darkModeEnabled ? '#94A3B8' : '#64748B'} />
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, darkModeEnabled && styles.containerDark]}>
       <TopNav title="Submit New Lead" />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.content}>
           <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+            
             <View style={styles.sectionHeaderRow}>
               <MaterialCommunityIcons name="account-outline" size={18} color="#DE1F26" style={styles.sectionIcon} />
-              <Text style={styles.sectionHeader}>Customer Details</Text>
+              <Text style={[styles.sectionHeader, darkModeEnabled && styles.textDark]}>Customer Details</Text>
             </View>
             
             <Input
@@ -154,41 +257,47 @@ export default function NewLeadScreen() {
 
             <View style={styles.row}>
               <View style={styles.flex1}>
-                <Input
-                  label="Date of Birth"
-                  placeholder="DD/MM/YYYY"
-                  value={form.dob}
-                  onChangeText={(v) => updateForm('dob', v)}
-                />
+                <Text style={[styles.selectLabel, darkModeEnabled && styles.textDark]}>Date of Birth</Text>
+                <View style={styles.dobContainer}>
+                  <TextInputWithCalendar
+                    value={form.dob}
+                    placeholder="DD/MM/YYYY"
+                    onChangeText={handleDobChange}
+                    maxLength={10}
+                    keyboardType="number-pad"
+                    darkModeEnabled={darkModeEnabled}
+                    onCalendarPress={() => setCalendarVisible(true)}
+                  />
+                </View>
               </View>
               <View style={{ width: 16 }} />
               <View style={styles.flex1}>
-                <Input
-                  label="Employment Type *"
-                  placeholder="Salaried / Self-Employed"
-                  value={form.employment}
-                  onChangeText={(v) => updateForm('employment', v)}
-                  required
-                />
+                {renderSelectField(
+                  'Employment Type *',
+                  form.employment,
+                  'Select employment',
+                  () => openDropdown('employment'),
+                  true
+                )}
               </View>
             </View>
 
             <View style={styles.sectionHeaderRow}>
               <MaterialCommunityIcons name="bank-outline" size={18} color="#DE1F26" style={styles.sectionIcon} />
-              <Text style={styles.sectionHeader}>Loan Details</Text>
+              <Text style={[styles.sectionHeader, darkModeEnabled && styles.textDark]}>Loan Details</Text>
             </View>
 
-            <Input
-              label="Product Interest *"
-              placeholder="e.g. Home Loan / LAP"
-              value={form.product}
-              onChangeText={(v) => updateForm('product', v)}
-              required
-            />
+            {renderSelectField(
+              'Product Interest *',
+              form.product,
+              'Select Product',
+              () => openDropdown('product'),
+              true
+            )}
 
             {/* Amount field with formatting presets */}
-            <View style={styles.amountContainer}>
-              <Text style={styles.amountLabel}>Loan Amount Required *</Text>
+            <View style={[styles.amountContainer, darkModeEnabled && styles.cardDark]}>
+              <Text style={[styles.amountLabel, darkModeEnabled && styles.textDark]}>Loan Amount Required *</Text>
               <Text style={styles.amountDisplay}>{formatAmount(form.amount)}</Text>
               
               <Input
@@ -203,10 +312,10 @@ export default function NewLeadScreen() {
                 {PRESETS.map((p) => (
                   <TouchableOpacity 
                     key={p} 
-                    style={styles.presetChip} 
+                    style={[styles.presetChip, darkModeEnabled && { backgroundColor: '#1E293B', borderColor: '#334155' }]} 
                     onPress={() => handlePreset(p)}
                   >
-                    <Text style={styles.presetChipText}>{p}</Text>
+                    <Text style={[styles.presetChipText, darkModeEnabled && styles.textDark]}>{p}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -228,7 +337,7 @@ export default function NewLeadScreen() {
 
             <View style={styles.sectionHeaderRow}>
               <MaterialCommunityIcons name="currency-inr" size={18} color="#DE1F26" style={styles.sectionIcon} />
-              <Text style={styles.sectionHeader}>Income & Financials</Text>
+              <Text style={[styles.sectionHeader, darkModeEnabled && styles.textDark]}>Income & Financials</Text>
             </View>
 
             <Input
@@ -239,20 +348,24 @@ export default function NewLeadScreen() {
               onChangeText={(v) => updateForm('income', v)}
             />
 
-            <Input
-              label="Estimated CIBIL Score"
-              placeholder="e.g. 750+ (Excellent)"
-              value={form.cibil}
-              onChangeText={(v) => updateForm('cibil', v)}
-            />
+            {renderSelectField(
+              'Estimated CIBIL Score',
+              form.cibil,
+              'Select score status',
+              () => openDropdown('cibil')
+            )}
 
             {/* Document Attachment Box */}
             <View style={styles.sectionHeaderRow}>
               <MaterialCommunityIcons name="file-document-outline" size={18} color="#DE1F26" style={styles.sectionIcon} />
-              <Text style={styles.sectionHeader}>Attach Documents</Text>
+              <Text style={[styles.sectionHeader, darkModeEnabled && styles.textDark]}>Attach Documents</Text>
             </View>
             <TouchableOpacity 
-              style={[styles.uploadBox, form.isDocUploaded && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} 
+              style={[
+                styles.uploadBox, 
+                form.isDocUploaded && { borderColor: '#10B981', backgroundColor: '#ECFDF5' },
+                darkModeEnabled && !form.isDocUploaded && styles.cardDark
+              ]} 
               onPress={handleUploadDocs}
             >
               {form.isDocUploaded ? (
@@ -263,8 +376,8 @@ export default function NewLeadScreen() {
                 </>
               ) : (
                 <>
-                  <MaterialCommunityIcons name="paperclip" size={32} color="#64748B" style={{ marginBottom: 8 }} />
-                  <Text style={styles.uploadText}>Attach KYC + Income Documents</Text>
+                  <MaterialCommunityIcons name="paperclip" size={32} color={darkModeEnabled ? '#94A3B8' : '#64748B'} style={{ marginBottom: 8 }} />
+                  <Text style={[styles.uploadText, darkModeEnabled && styles.textDark]}>Attach KYC + Income Documents</Text>
                   <Text style={styles.uploadSubtext}>Select multiple files (PDF, JPG, PNG)</Text>
                 </>
               )}
@@ -281,7 +394,123 @@ export default function NewLeadScreen() {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* --- Generic Dropdown Picker Modal --- */}
+      <Modal visible={pickerVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, darkModeEnabled && styles.cardDark]}>
+            <Text style={[styles.modalTitle, darkModeEnabled && styles.textDark]}>{pickerTitle}</Text>
+            <FlatList
+              data={pickerOptions}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity 
+                  style={[styles.optionItem, darkModeEnabled && { borderBottomColor: '#334155' }]} 
+                  onPress={() => handleOptionSelect(item)}
+                >
+                  <Text style={[styles.optionText, darkModeEnabled && styles.textDark]}>{item}</Text>
+                </TouchableOpacity>
+              )}
+            />
+            <TouchableOpacity style={styles.closeButton} onPress={() => setPickerVisible(false)}>
+              <Text style={styles.closeButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* --- Elegant Custom Calendar Modal --- */}
+      <Modal visible={calendarVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, darkModeEnabled && styles.cardDark, { width: '90%' }]}>
+            <Text style={[styles.modalTitle, darkModeEnabled && styles.textDark]}>Select Date of Birth</Text>
+
+            {/* Year navigation row */}
+            <View style={styles.yearPickerRow}>
+              <TouchableOpacity 
+                style={[styles.yearNavBtn, darkModeEnabled && { backgroundColor: '#334155' }]} 
+                onPress={() => setCalendarYear(prev => prev - 1)}
+              >
+                <MaterialCommunityIcons name="chevron-left" size={24} color={darkModeEnabled ? '#F8FAFC' : '#0F172A'} />
+              </TouchableOpacity>
+              <Text style={[styles.yearText, darkModeEnabled && styles.textDark]}>{calendarYear}</Text>
+              <TouchableOpacity 
+                style={[styles.yearNavBtn, darkModeEnabled && { backgroundColor: '#334155' }]} 
+                onPress={() => setCalendarYear(prev => prev + 1)}
+              >
+                <MaterialCommunityIcons name="chevron-right" size={24} color={darkModeEnabled ? '#F8FAFC' : '#0F172A'} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Month selection row */}
+            <View style={styles.calendarHeader}>
+              <TouchableOpacity 
+                style={[styles.yearNavBtn, darkModeEnabled && { backgroundColor: '#334155' }]} 
+                onPress={() => setCalendarMonth(prev => prev === 0 ? 11 : prev - 1)}
+              >
+                <MaterialCommunityIcons name="chevron-left" size={20} color={darkModeEnabled ? '#F8FAFC' : '#0F172A'} />
+              </TouchableOpacity>
+              <Text style={[styles.calendarMonthText, darkModeEnabled && styles.textDark]}>{MONTHS[calendarMonth]}</Text>
+              <TouchableOpacity 
+                style={[styles.yearNavBtn, darkModeEnabled && { backgroundColor: '#334155' }]} 
+                onPress={() => setCalendarMonth(prev => prev === 11 ? 0 : prev + 1)}
+              >
+                <MaterialCommunityIcons name="chevron-right" size={20} color={darkModeEnabled ? '#F8FAFC' : '#0F172A'} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Calendar Days name row */}
+            <View style={styles.weekDaysRow}>
+              {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
+                <Text key={d} style={styles.weekDayName}>{d}</Text>
+              ))}
+            </View>
+
+            {/* Calendar Days Grid */}
+            <View style={styles.daysGrid}>
+              {getDaysArray().map((day, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={[
+                    styles.dayCell,
+                    day === null && { opacity: 0 },
+                    day !== null && styles.dayCellInteractive
+                  ]}
+                  disabled={day === null}
+                  onPress={() => day !== null && handleSelectDay(day)}
+                >
+                  <Text style={[styles.dayText, darkModeEnabled && styles.textDark]}>{day}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity style={styles.closeButton} onPress={() => setCalendarVisible(false)}>
+              <Text style={styles.closeButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
+  );
+}
+
+// Custom input suffix calendar icon component
+function TextInputWithCalendar({ value, placeholder, onChangeText, maxLength, keyboardType, darkModeEnabled, onCalendarPress }: any) {
+  return (
+    <View style={[styles.inputContainer, darkModeEnabled && styles.inputDark]}>
+      <TextInput
+        style={[styles.inputField, darkModeEnabled && styles.textDark]}
+        placeholder={placeholder}
+        placeholderTextColor={darkModeEnabled ? '#64748B' : '#94A3B8'}
+        value={value}
+        onChangeText={onChangeText}
+        maxLength={maxLength}
+        keyboardType={keyboardType}
+      />
+      <TouchableOpacity style={styles.calendarIconBtn} onPress={onCalendarPress}>
+        <MaterialCommunityIcons name="calendar" size={24} color="#DE1F26" />
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -382,5 +611,200 @@ const styles = StyleSheet.create({
   submitBtn: {
     marginTop: 16,
     marginBottom: 32,
+  },
+  // Custom Select Box styles
+  selectFieldContainer: {
+    marginBottom: 16,
+  },
+  selectLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#2D3134',
+    marginBottom: 8,
+  },
+  selectBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 52,
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+  },
+  selectValue: {
+    fontSize: 16,
+    color: '#2D3134',
+    fontWeight: '600',
+  },
+  selectPlaceholder: {
+    color: '#94A3B8',
+  },
+  requiredAsterisk: {
+    color: '#DE1F26',
+  },
+  // Modals overlays & option elements
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '85%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+    maxHeight: '75%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  optionItem: {
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#334155',
+    textAlign: 'center',
+  },
+  closeButton: {
+    marginTop: 18,
+    backgroundColor: '#DE1F26',
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  // Calendar component structures
+  dobContainer: {
+    height: 52,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 52,
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+  },
+  inputDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
+  },
+  inputField: {
+    flex: 1,
+    height: '100%',
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: '#2D3134',
+    fontWeight: '600',
+  },
+  calendarIconBtn: {
+    paddingHorizontal: 16,
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calendarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 10,
+    padding: 6,
+  },
+  calendarMonthText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  weekDaysRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  weekDayName: {
+    width: '13%',
+    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#94A3B8',
+  },
+  daysGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    gap: 4,
+    paddingHorizontal: 2,
+  },
+  dayCell: {
+    width: '13.3%',
+    aspectRatio: 1.1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+  },
+  dayCellInteractive: {
+    backgroundColor: '#F8F9FA',
+  },
+  dayText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  yearPickerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 16,
+  },
+  yearNavBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  yearText: {
+    fontSize: 19,
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  // Dark theme definitions
+  containerDark: {
+    backgroundColor: '#0F172A',
+  },
+  cardDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
+  },
+  textDark: {
+    color: '#F8FAFC',
+  },
+  textMutedDark: {
+    color: '#94A3B8',
   },
 });

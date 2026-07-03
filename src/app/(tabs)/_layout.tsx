@@ -1,24 +1,27 @@
 import { Tabs } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
+import { useAuth } from '../../context/AuthContext';
 
 export default function TabLayout() {
+  const { darkModeEnabled } = useAuth();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false, // We have a custom header in the screens
         tabBarActiveTintColor: '#DE1F26',
-        tabBarInactiveTintColor: '#64748B',
+        tabBarInactiveTintColor: darkModeEnabled ? '#94A3B8' : '#64748B',
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopColor: '#F1F5F9',
+          backgroundColor: darkModeEnabled ? '#0F172A' : '#FFFFFF',
+          borderTopColor: darkModeEnabled ? '#1E293B' : '#F1F5F9',
           borderTopWidth: 1,
           height: Platform.OS === 'ios' ? 85 : 65,
           paddingBottom: Platform.OS === 'ios' ? 25 : 10,
           paddingTop: 10,
           position: 'absolute',
           ...Platform.select({
-            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.05, shadowRadius: 12 },
+            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: darkModeEnabled ? 0.2 : 0.05, shadowRadius: 12 },
             android: { elevation: 8 },
           }),
         },

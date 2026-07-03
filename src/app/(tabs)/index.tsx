@@ -11,7 +11,8 @@ export default function DashboardScreen() {
     leads, 
     onboardingData, 
     notificationsEnabled, 
-    setNotificationsEnabled 
+    setNotificationsEnabled,
+    darkModeEnabled
   } = useAuth();
 
   const [hideBanner, setHideBanner] = React.useState(false);
@@ -101,15 +102,15 @@ export default function DashboardScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, darkModeEnabled && styles.containerDark]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
           {/* Header Hero Area */}
-          <View style={styles.hero}>
+          <View style={[styles.hero, darkModeEnabled && styles.heroDark]}>
             <View style={styles.heroHeader}>
               <View>
-                <Text style={styles.greeting}>Good Evening, <Text style={styles.greetingHighlight}>{onboardingData.fullName || 'Rajesh'}!</Text></Text>
-                <Text style={styles.greetingSub}>DSA Partner · Code: DSA-08421</Text>
+                <Text style={[styles.greeting, darkModeEnabled && styles.textDark]}>Good Evening, <Text style={styles.greetingHighlight}>{onboardingData.fullName || 'Rajesh'}!</Text></Text>
+                <Text style={[styles.greetingSub, darkModeEnabled && styles.textMutedDark]}>DSA Partner · Code: DSA-08421</Text>
               </View>
               <TouchableScale onPress={openBottomSheet} style={styles.avatar}>
                 <Text style={styles.avatarText}>RK</Text>
@@ -118,11 +119,11 @@ export default function DashboardScreen() {
 
             {/* KYC Status Banner */}
             <TouchableScale onPress={openBottomSheet} style={{ width: '100%', marginBottom: 16 }}>
-              <View style={styles.statusBanner}>
+              <View style={[styles.statusBanner, darkModeEnabled && { backgroundColor: 'rgba(16, 185, 129, 0.04)', borderColor: 'rgba(16, 185, 129, 0.15)' }]}>
                 <View style={styles.statusDot} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.statusTitle}>KYC Approved</Text>
-                  <Text style={styles.statusSub}>Your account is active and verified · Tap to view details</Text>
+                  <Text style={[styles.statusSub, darkModeEnabled && styles.textMutedDark]}>Your account is active and verified · Tap to view details</Text>
                 </View>
                 <MaterialCommunityIcons name="chevron-right" size={20} color="#059669" />
               </View>
@@ -130,12 +131,12 @@ export default function DashboardScreen() {
 
             {/* Push Notification Banner */}
             {!notificationsEnabled && !hideBanner && (
-              <View style={styles.notificationBanner}>
+              <View style={[styles.notificationBanner, darkModeEnabled && { backgroundColor: 'rgba(37, 99, 235, 0.05)', borderColor: 'rgba(37, 99, 235, 0.15)' }]}>
                 <View style={styles.notificationBannerContent}>
-                  <MaterialCommunityIcons name="bell-ring-outline" size={20} color="#1E3A8A" style={{ marginRight: 12 }} />
+                  <MaterialCommunityIcons name="bell-ring-outline" size={20} color={darkModeEnabled ? '#60A5FA' : '#1E3A8A'} style={{ marginRight: 12 }} />
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.notificationTitle}>Enable Push Notifications</Text>
-                    <Text style={styles.notificationSub}>Stay updated on your lead statuses</Text>
+                    <Text style={[styles.notificationTitle, darkModeEnabled && { color: '#60A5FA' }]}>Enable Push Notifications</Text>
+                    <Text style={[styles.notificationSub, darkModeEnabled && styles.textMutedDark]}>Stay updated on your lead statuses</Text>
                   </View>
                 </View>
                 <View style={styles.notificationActions}>
@@ -151,77 +152,77 @@ export default function DashboardScreen() {
 
             {/* Stats Row */}
             <View style={styles.statsRow}>
-              <TouchableScale style={[styles.statBox, { borderTopColor: '#DE1F26', borderTopWidth: 3 }]} onPress={() => router.push('/(tabs)/leads')}>
+              <TouchableScale style={[styles.statBox, { borderTopColor: '#DE1F26', borderTopWidth: 3 }, darkModeEnabled && styles.cardDark]} onPress={() => router.push('/(tabs)/leads')}>
                 <Text style={[styles.statValue, { color: '#DE1F26' }]}>{leads.length}</Text>
-                <Text style={styles.statLabel}>Leads</Text>
+                <Text style={[styles.statLabel, darkModeEnabled && styles.textMutedDark]}>Leads</Text>
               </TouchableScale>
-              <TouchableScale style={[styles.statBox, { borderTopColor: '#10B981', borderTopWidth: 3 }]} onPress={() => router.push('/(tabs)/payouts')}>
+              <TouchableScale style={[styles.statBox, { borderTopColor: '#10B981', borderTopWidth: 3 }, darkModeEnabled && styles.cardDark]} onPress={() => router.push('/(tabs)/payouts')}>
                 <Text style={[styles.statValue, { color: '#10B981' }]}>₹4.2Cr</Text>
-                <Text style={styles.statLabel}>Disbursed</Text>
+                <Text style={[styles.statLabel, darkModeEnabled && styles.textMutedDark]}>Disbursed</Text>
               </TouchableScale>
-              <TouchableScale style={[styles.statBox, { borderTopColor: '#F59E0B', borderTopWidth: 3 }]} onPress={() => router.push('/(tabs)/payouts')}>
+              <TouchableScale style={[styles.statBox, { borderTopColor: '#F59E0B', borderTopWidth: 3 }, darkModeEnabled && styles.cardDark]} onPress={() => router.push('/(tabs)/payouts')}>
                 <Text style={[styles.statValue, { color: '#F59E0B' }]}>₹84K</Text>
-                <Text style={styles.statLabel}>Earned</Text>
+                <Text style={[styles.statLabel, darkModeEnabled && styles.textMutedDark]}>Earned</Text>
               </TouchableScale>
             </View>
           </View>
 
           {/* Quick Actions */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <Text style={[styles.sectionTitle, darkModeEnabled && styles.textDark]}>Quick Actions</Text>
             <View style={styles.quickActionsGrid}>
               <TouchableScale style={styles.actionBtn} onPress={() => router.push('/(tabs)/new-lead' as any)}>
                 <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(222,31,38,0.05)', borderColor: 'rgba(222,31,38,0.15)', borderWidth: 1 }]}>
                   <MaterialCommunityIcons name="plus" size={24} color="#DE1F26" />
                 </View>
-                <Text style={styles.actionLabel}>New Lead</Text>
+                <Text style={[styles.actionLabel, darkModeEnabled && styles.textMutedDark]}>New Lead</Text>
               </TouchableScale>
 
               <TouchableScale style={styles.actionBtn} onPress={() => router.push('/(tabs)/leads')}>
                 <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(0,212,255,0.06)', borderColor: 'rgba(0,212,255,0.15)', borderWidth: 1 }]}>
                   <MaterialCommunityIcons name="file-document-outline" size={24} color="#00D4FF" />
                 </View>
-                <Text style={styles.actionLabel}>My Leads</Text>
+                <Text style={[styles.actionLabel, darkModeEnabled && styles.textMutedDark]}>My Leads</Text>
               </TouchableScale>
 
               <TouchableScale style={styles.actionBtn} onPress={() => router.push('/(tabs)/payouts')}>
                 <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(0,229,160,0.06)', borderColor: 'rgba(0,229,160,0.15)', borderWidth: 1 }]}>
                   <MaterialCommunityIcons name="cash-multiple" size={24} color="#00E5A0" />
                 </View>
-                <Text style={styles.actionLabel}>Payouts</Text>
+                <Text style={[styles.actionLabel, darkModeEnabled && styles.textMutedDark]}>Payouts</Text>
               </TouchableScale>
 
               <TouchableScale style={styles.actionBtn} onPress={() => Alert.alert('Desktop Admin', 'Opening India Shelter Admin Dashboard view...')}>
                 <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(255,184,48,0.06)', borderColor: 'rgba(255,184,48,0.15)', borderWidth: 1 }]}>
                   <MaterialCommunityIcons name="monitor" size={24} color="#FFB830" />
                 </View>
-                <Text style={styles.actionLabel}>Dashboard</Text>
+                <Text style={[styles.actionLabel, darkModeEnabled && styles.textMutedDark]}>Dashboard</Text>
               </TouchableScale>
             </View>
           </View>
 
           {/* Commission Card */}
           <View style={styles.section}>
-            <TouchableScale style={styles.payoutCard} onPress={() => router.push('/(tabs)/payouts')}>
+            <TouchableScale style={[styles.payoutCard, darkModeEnabled && styles.cardDark]} onPress={() => router.push('/(tabs)/payouts')}>
               <View style={styles.payoutHeader}>
                 <View>
-                  <Text style={styles.payoutLabel}>NEXT PAYOUT</Text>
+                  <Text style={[styles.payoutLabel, darkModeEnabled && styles.textMutedDark]}>NEXT PAYOUT</Text>
                   <Text style={styles.payoutAmount}>₹84,200</Text>
-                  <Text style={styles.payoutDate}>Due on 15 Jun 2026</Text>
+                  <Text style={[styles.payoutDate, darkModeEnabled && styles.textMutedDark]}>Due on 15 Jun 2026</Text>
                 </View>
                 <MaterialCommunityIcons name="currency-inr" size={32} color="#10B981" />
               </View>
-              <View style={styles.payoutMetrics}>
+              <View style={[styles.payoutMetrics, darkModeEnabled && { borderTopColor: '#334155' }]}>
                 <View>
-                  <Text style={styles.metricLabel}>This Month</Text>
+                  <Text style={[styles.metricLabel, darkModeEnabled && styles.textMutedDark]}>This Month</Text>
                   <Text style={[styles.metricValue, { color: '#10B981' }]}>₹1.2L</Text>
                 </View>
                 <View>
-                  <Text style={styles.metricLabel}>Pending</Text>
+                  <Text style={[styles.metricLabel, darkModeEnabled && styles.textMutedDark]}>Pending</Text>
                   <Text style={[styles.metricValue, { color: '#F59E0B' }]}>₹42K</Text>
                 </View>
                 <View>
-                  <Text style={styles.metricLabel}>YTD</Text>
+                  <Text style={[styles.metricLabel, darkModeEnabled && styles.textMutedDark]}>YTD</Text>
                   <Text style={[styles.metricValue, { color: '#06B6D4' }]}>₹8.4L</Text>
                 </View>
               </View>
@@ -231,7 +232,7 @@ export default function DashboardScreen() {
           {/* Recent Leads */}
           <View style={styles.section}>
             <View style={styles.recentLeadsHeader}>
-              <Text style={styles.sectionTitle}>Recent Leads</Text>
+              <Text style={[styles.sectionTitle, darkModeEnabled && styles.textDark]}>Recent Leads</Text>
               <TouchableOpacity onPress={() => router.push('/(tabs)/leads')}>
                 <Text style={styles.viewAll}>View All</Text>
               </TouchableOpacity>
@@ -240,21 +241,21 @@ export default function DashboardScreen() {
             {showRecentLeads.map((lead) => (
               <TouchableScale 
                 key={lead.id} 
-                style={styles.leadCard} 
+                style={[styles.leadCard, darkModeEnabled && styles.cardDark]} 
                 onPress={() => handleRecentLeadPress(lead.id)}
               >
                 <View style={styles.leadHeader}>
-                  <Text style={styles.leadName}>{lead.name}</Text>
+                  <Text style={[styles.leadName, darkModeEnabled && styles.textDark]}>{lead.name}</Text>
                   <View style={getStatusStyle(lead.status)}>
                     <Text style={getStatusTextStyle(lead.status)}>{getStatusText(lead.status)}</Text>
                   </View>
                 </View>
                 <View style={styles.leadDetailsRow}>
-                  <Text style={styles.leadDetailText}>{lead.id}</Text>
-                  <Text style={styles.leadDetailText}>·</Text>
-                  <Text style={styles.leadDetailText}>{lead.amount}</Text>
-                  <Text style={styles.leadDetailText}>·</Text>
-                  <Text style={styles.leadDetailText}>{lead.product}</Text>
+                  <Text style={[styles.leadDetailText, darkModeEnabled && styles.textMutedDark]}>{lead.id}</Text>
+                  <Text style={[styles.leadDetailText, darkModeEnabled && styles.textMutedDark]}>·</Text>
+                  <Text style={[styles.leadDetailText, darkModeEnabled && styles.textMutedDark]}>{lead.amount}</Text>
+                  <Text style={[styles.leadDetailText, darkModeEnabled && styles.textMutedDark]}>·</Text>
+                  <Text style={[styles.leadDetailText, darkModeEnabled && styles.textMutedDark]}>{lead.product}</Text>
                 </View>
               </TouchableScale>
             ))}
@@ -946,4 +947,24 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 2,
   },
+  containerDark: {
+    backgroundColor: '#0F172A',
+  },
+  heroDark: {
+    backgroundColor: '#0F172A',
+    borderBottomColor: '#1E293B',
+  },
+  cardDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
+  },
+  textDark: {
+    color: '#F8FAFC',
+  },
+  textMutedDark: {
+    color: '#94A3B8',
+  },
+  dividerDark: {
+    backgroundColor: '#334155',
+  }
 });

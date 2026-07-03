@@ -7,7 +7,7 @@ import { TouchableScale } from '../../components/ui/TouchableScale';
 
 export default function PayoutsScreen() {
   const insets = useSafeAreaInsets();
-  const { payouts } = useAuth();
+  const { payouts, darkModeEnabled } = useAuth();
 
   const [selectedProduct, setSelectedProduct] = useState('Home Loan');
   const [sourcingAmt, setSourcingAmt] = useState(25); // in Lakhs
@@ -56,37 +56,37 @@ export default function PayoutsScreen() {
   }, [selectedProduct, sourcingAmt]);
   
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, darkModeEnabled && styles.containerDark, { paddingTop: insets.top }]}>
       <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Payouts</Text>
+        <View style={[styles.header, darkModeEnabled && styles.headerDark]}>
+          <Text style={[styles.headerTitle, darkModeEnabled && styles.textDark]}>Payouts</Text>
         </View>
         
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {/* Earnings Hero Card */}
-          <View style={styles.earningsHero}>
-            <Text style={styles.heroSub}>Next Payout</Text>
+          <View style={[styles.earningsHero, darkModeEnabled && styles.cardDark]}>
+            <Text style={[styles.heroSub, darkModeEnabled && styles.textMutedDark]}>Next Payout</Text>
             <Text style={styles.heroAmount}>₹84,200</Text>
-            <Text style={styles.heroDate}>Due on 15 Jun 2026 · Bank: HDFC ***4521</Text>
+            <Text style={[styles.heroDate, darkModeEnabled && styles.textMutedDark]}>Due on 15 Jun 2026 · Bank: HDFC ***4521</Text>
             
-            <View style={styles.heroMetrics}>
+            <View style={[styles.heroMetrics, darkModeEnabled && { borderTopColor: '#334155' }]}>
               <View>
-                <Text style={styles.metricLabel}>This Month</Text>
-                <Text style={styles.metricValue}>₹1.2L</Text>
+                <Text style={[styles.metricLabel, darkModeEnabled && styles.textMutedDark]}>This Month</Text>
+                <Text style={[styles.metricValue, darkModeEnabled && styles.textDark]}>₹1.2L</Text>
               </View>
               <View>
-                <Text style={styles.metricLabel}>Pending</Text>
-                <Text style={styles.metricValue}>₹42K</Text>
+                <Text style={[styles.metricLabel, darkModeEnabled && styles.textMutedDark]}>Pending</Text>
+                <Text style={[styles.metricValue, darkModeEnabled && styles.textDark]}>₹42K</Text>
               </View>
               <View>
-                <Text style={styles.metricLabel}>YTD Total</Text>
-                <Text style={styles.metricValue}>₹8.4L</Text>
+                <Text style={[styles.metricLabel, darkModeEnabled && styles.textMutedDark]}>YTD Total</Text>
+                <Text style={[styles.metricValue, darkModeEnabled && styles.textDark]}>₹8.4L</Text>
               </View>
             </View>
           </View>
 
           {/* Commission Structure Rate Grid */}
-          <Text style={styles.sectionTitle}>Your Commission Structure</Text>
+          <Text style={[styles.sectionTitle, darkModeEnabled && styles.textDark]}>Your Commission Structure</Text>
           <View style={styles.rateGrid}>
             {[
               { name: 'Home Loan', rate: '1.2%', color: '#DE1F26' },
@@ -100,41 +100,42 @@ export default function PayoutsScreen() {
                   key={item.name}
                   style={[
                     styles.rateCard,
-                    isSelected && { borderColor: '#DE1F26', backgroundColor: 'rgba(222,31,38,0.02)', borderWidth: 1.5 }
+                    darkModeEnabled && styles.cardDark,
+                    isSelected && { borderColor: '#DE1F26', backgroundColor: darkModeEnabled ? 'rgba(222,31,38,0.1)' : 'rgba(222,31,38,0.02)', borderWidth: 1.5 }
                   ]}
                   onPress={() => setSelectedProduct(item.name)}
                 >
                   <Text style={[styles.rateValue, { color: item.color }]}>{item.rate}</Text>
-                  <Text style={styles.rateLabel}>{item.name}</Text>
+                  <Text style={[styles.rateLabel, darkModeEnabled && styles.textMutedDark]}>{item.name}</Text>
                 </TouchableScale>
               );
             })}
           </View>
 
           {/* Interactive Calculator Widget */}
-          <Text style={styles.sectionTitle}>Live Payout Calculator</Text>
-          <View style={styles.calculatorCard}>
-            <Text style={styles.calcInstruction}>Adjust sourcing amount to compute commission:</Text>
+          <Text style={[styles.sectionTitle, darkModeEnabled && styles.textDark]}>Live Payout Calculator</Text>
+          <View style={[styles.calculatorCard, darkModeEnabled && styles.cardDark]}>
+            <Text style={[styles.calcInstruction, darkModeEnabled && styles.textMutedDark]}>Adjust sourcing amount to compute commission:</Text>
             
             {/* Sourcing Amount Adjuster */}
-            <View style={styles.calcAdjusterSection}>
+            <View style={[styles.calcAdjusterSection, darkModeEnabled && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
               <View style={styles.adjusterRow}>
                 <TouchableOpacity 
-                  style={styles.adjustBtn} 
+                  style={[styles.adjustBtn, darkModeEnabled && { backgroundColor: '#334155', borderColor: '#475569' }]} 
                   onPress={() => setSourcingAmt(Math.max(5, sourcingAmt - 5))}
                 >
                   <MaterialCommunityIcons name="minus" size={24} color="#DE1F26" />
                 </TouchableOpacity>
                 
                 <View style={{ alignItems: 'center' }}>
-                  <Text style={styles.amountDisplay}>
+                  <Text style={[styles.amountDisplay, darkModeEnabled && styles.textDark]}>
                     ₹{sourcingAmt >= 100 ? `${(sourcingAmt / 100).toFixed(1)} Cr` : `${sourcingAmt} L`}
                   </Text>
-                  <Text style={styles.amountDisplaySub}>Sourcing Volume</Text>
+                  <Text style={[styles.amountDisplaySub, darkModeEnabled && styles.textMutedDark]}>Sourcing Volume</Text>
                 </View>
 
                 <TouchableOpacity 
-                  style={styles.adjustBtn} 
+                  style={[styles.adjustBtn, darkModeEnabled && { backgroundColor: '#334155', borderColor: '#475569' }]} 
                   onPress={() => setSourcingAmt(Math.min(500, sourcingAmt + 5))}
                 >
                   <MaterialCommunityIcons name="plus" size={24} color="#DE1F26" />
@@ -153,10 +154,18 @@ export default function PayoutsScreen() {
                   return (
                     <TouchableOpacity
                       key={preset.label}
-                      style={[styles.presetChip, isPresetActive && styles.presetChipActive]}
+                      style={[
+                        styles.presetChip, 
+                        isPresetActive && styles.presetChipActive,
+                        darkModeEnabled && !isPresetActive && styles.cardDark
+                      ]}
                       onPress={() => setSourcingAmt(preset.val)}
                     >
-                      <Text style={[styles.presetText, isPresetActive && styles.presetTextActive]}>
+                      <Text style={[
+                        styles.presetText, 
+                        isPresetActive && styles.presetTextActive,
+                        darkModeEnabled && !isPresetActive && styles.textDark
+                      ]}>
                         {preset.label}
                       </Text>
                     </TouchableOpacity>
@@ -166,22 +175,22 @@ export default function PayoutsScreen() {
             </View>
 
             {/* Estimated Commission Display */}
-            <View style={styles.calcResultArea}>
-              <Text style={styles.resultLabel}>ESTIMATED COMMISSION ({selectedProduct.toUpperCase()})</Text>
+            <View style={[styles.calcResultArea, darkModeEnabled && { backgroundColor: 'rgba(16, 185, 129, 0.04)', borderColor: 'rgba(16, 185, 129, 0.15)' }]}>
+              <Text style={[styles.resultLabel, darkModeEnabled && styles.textMutedDark]}>ESTIMATED COMMISSION ({selectedProduct.toUpperCase()})</Text>
               <Animated.Text style={[styles.resultValue, { transform: [{ scale: calcScaleAnim }] }]}>
                 ₹{estimatedPayout.toLocaleString('en-IN')}
               </Animated.Text>
-              <Text style={styles.resultSub}>Calculated at {currentRate * 100}% flat payout rate</Text>
+              <Text style={[styles.resultSub, darkModeEnabled && styles.textMutedDark]}>Calculated at {currentRate * 100}% flat payout rate</Text>
             </View>
           </View>
 
           {/* Transaction History list */}
-          <Text style={styles.sectionTitle}>Transaction History</Text>
+          <Text style={[styles.sectionTitle, darkModeEnabled && styles.textDark]}>Transaction History</Text>
           
           {payouts.map((p) => {
             const isPaid = p.status === 'Paid';
             return (
-              <TouchableScale key={p.id} style={styles.payoutCard}>
+              <TouchableScale key={p.id} style={[styles.payoutCard, darkModeEnabled && styles.cardDark]}>
                 <View style={styles.payoutTop}>
                   <View style={[styles.iconWrapper, isPaid ? styles.iconPaid : styles.iconPending]}>
                     <MaterialCommunityIcons 
@@ -191,9 +200,9 @@ export default function PayoutsScreen() {
                     />
                   </View>
                   <View style={styles.payoutInfo}>
-                    <Text style={styles.month}>{p.month} Payout</Text>
-                    <Text style={styles.details}>{p.leads} disbursed leads • {p.bank}</Text>
-                    <Text style={styles.date}>Date: {p.date}</Text>
+                    <Text style={[styles.month, darkModeEnabled && styles.textDark]}>{p.month} Payout</Text>
+                    <Text style={[styles.details, darkModeEnabled && styles.textMutedDark]}>{p.leads} disbursed leads • {p.bank}</Text>
+                    <Text style={[styles.date, darkModeEnabled && styles.textMutedDark]}>Date: {p.date}</Text>
                   </View>
                   <View style={styles.payoutAmountMeta}>
                     <Text style={[styles.amount, { color: isPaid ? '#16A34A' : '#D97706' }]}>{p.amount}</Text>
@@ -506,6 +515,23 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#64748B',
     fontWeight: '600',
+  },
+  containerDark: {
+    backgroundColor: '#0F172A',
+  },
+  headerDark: {
+    backgroundColor: '#0F172A',
+    borderBottomColor: '#1E293B',
+  },
+  cardDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
+  },
+  textDark: {
+    color: '#F8FAFC',
+  },
+  textMutedDark: {
+    color: '#94A3B8',
   },
 });
 

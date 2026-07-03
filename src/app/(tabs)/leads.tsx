@@ -10,7 +10,7 @@ const FILTERS = ['All', 'Processing', 'Approved', 'Pending', 'Disbursed', 'Rejec
 
 export default function LeadsScreen() {
   const insets = useSafeAreaInsets();
-  const { leads, fetchLeads } = useAuth();
+  const { leads, fetchLeads, darkModeEnabled } = useAuth();
   
   const [refreshing, setRefreshing] = useState(false);
   const spinValue = useRef(new Animated.Value(0)).current;
@@ -116,15 +116,15 @@ export default function LeadsScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, darkModeEnabled && styles.containerDark, { paddingTop: insets.top }]}>
       <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-        <View style={styles.header}>
+        <View style={[styles.header, darkModeEnabled && styles.headerDark]}>
           <View>
-            <Text style={styles.headerTitle}>My Leads</Text>
-            <Text style={styles.leadsCount}>{filteredLeads.length} lead{filteredLeads.length !== 1 ? 's' : ''}</Text>
+            <Text style={[styles.headerTitle, darkModeEnabled && styles.textDark]}>My Leads</Text>
+            <Text style={[styles.leadsCount, darkModeEnabled && styles.textMutedDark]}>{filteredLeads.length} lead{filteredLeads.length !== 1 ? 's' : ''}</Text>
           </View>
           <TouchableOpacity 
-            style={styles.refreshBtn} 
+            style={[styles.refreshBtn, darkModeEnabled && { backgroundColor: '#334155' }]} 
             onPress={handleRefresh}
             disabled={refreshing}
             id="refresh-leads-btn"
@@ -138,13 +138,14 @@ export default function LeadsScreen() {
         {/* Search Bar */}
         <View style={[
           styles.searchContainer,
-          searchFocused && { borderColor: '#DE1F26', shadowColor: '#DE1F26', shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 }
+          searchFocused && { borderColor: '#DE1F26', shadowColor: '#DE1F26', shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 },
+          darkModeEnabled && styles.cardDark
         ]}>
           <MaterialCommunityIcons name="magnify" size={20} color={searchFocused ? '#DE1F26' : '#64748B'} style={styles.searchIcon} />
           <TextInput 
-            style={styles.searchInput}
+            style={[styles.searchInput, darkModeEnabled && styles.textDark]}
             placeholder="Search by name, ID or city..."
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={darkModeEnabled ? '#64748B' : '#94A3B8'}
             value={search}
             onChangeText={setSearch}
             onFocus={() => setSearchFocused(true)}
@@ -170,10 +171,18 @@ export default function LeadsScreen() {
               return (
                 <TouchableScale 
                   key={f} 
-                  style={[styles.filterChip, isActive && styles.filterChipActive]}
+                  style={[
+                    styles.filterChip, 
+                    isActive && styles.filterChipActive,
+                    darkModeEnabled && !isActive && styles.cardDark
+                  ]}
                   onPress={() => handleFilterChange(f)}
                 >
-                  <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>
+                  <Text style={[
+                    styles.filterChipText, 
+                    isActive && styles.filterChipTextActive,
+                    darkModeEnabled && !isActive && styles.textDark
+                  ]}>
                     {f} ({count})
                   </Text>
                 </TouchableScale>
@@ -193,8 +202,8 @@ export default function LeadsScreen() {
             {filteredLeads.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <MaterialCommunityIcons name="database-search-outline" size={48} color="#94A3B8" style={{ marginBottom: 12 }} />
-                <Text style={styles.emptyTitle}>No leads found</Text>
-                <Text style={styles.emptySub}>Try a different search or filter option</Text>
+                <Text style={[styles.emptyTitle, darkModeEnabled && styles.textDark]}>No leads found</Text>
+                <Text style={[styles.emptySub, darkModeEnabled && styles.textMutedDark]}>Try a different search or filter option</Text>
               </View>
             ) : (
               filteredLeads.map((lead) => {
@@ -204,7 +213,7 @@ export default function LeadsScreen() {
                 return (
                   <TouchableScale 
                     key={lead.id} 
-                    style={styles.leadCard}
+                    style={[styles.leadCard, darkModeEnabled && styles.cardDark]}
                     onPress={() => handleLeadPress(lead.id)}
                   >
                     {/* Status vertical stripe on the left edge */}
@@ -214,14 +223,14 @@ export default function LeadsScreen() {
                       <Text style={styles.avatarText}>{initials}</Text>
                     </View>
                     <View style={styles.leadInfo}>
-                      <Text style={styles.leadName}>{lead.name}</Text>
-                      <Text style={styles.leadDetail}>
+                      <Text style={[styles.leadName, darkModeEnabled && styles.textDark]}>{lead.name}</Text>
+                      <Text style={[styles.leadDetail, darkModeEnabled && styles.textMutedDark]}>
                         {lead.product} • {lead.id} • {lead.city}
                       </Text>
-                      {lead.date && <Text style={styles.leadDate}>{lead.date}</Text>}
+                      {lead.date && <Text style={[styles.leadDate, darkModeEnabled && styles.textMutedDark]}>{lead.date}</Text>}
                     </View>
                     <View style={styles.leadMeta}>
-                      <Text style={styles.leadAmount}>{lead.amount}</Text>
+                      <Text style={[styles.leadAmount, darkModeEnabled && styles.textDark]}>{lead.amount}</Text>
                       <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
                         <Text style={[styles.statusBadgeText, { color: status.color }]}>{lead.status}</Text>
                       </View>
@@ -439,5 +448,22 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 8,
     backgroundColor: '#FFF5F5',
+  },
+  containerDark: {
+    backgroundColor: '#0F172A',
+  },
+  headerDark: {
+    backgroundColor: '#0F172A',
+    borderBottomColor: '#1E293B',
+  },
+  cardDark: {
+    backgroundColor: '#1E293B',
+    borderColor: '#334155',
+  },
+  textDark: {
+    color: '#F8FAFC',
+  },
+  textMutedDark: {
+    color: '#94A3B8',
   },
 });

@@ -62,6 +62,13 @@ export function TouchableScale({
     }
   });
 
+  if ((flatStyle as any).width !== undefined) {
+    layoutStyle.width = '100%';
+  }
+  if ((flatStyle as any).height !== undefined) {
+    layoutStyle.height = '100%';
+  }
+
   return (
     <Animated.View style={[{ transform: [{ scale: scaleAnim }] }, containerStyle]}>
       <Pressable
