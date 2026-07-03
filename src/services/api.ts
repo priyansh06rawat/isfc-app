@@ -320,7 +320,7 @@ export const LeadAPI = {
     
     const nameParts = (data.name || '').trim().split(/\s+/);
     const firstName = nameParts[0] || 'First';
-    const lastName = nameParts.slice(1).join(' ') || 'Last';
+    const lastName = nameParts.slice(1).join(' ') || '.';
 
     const payload = {
       firstName: firstName,
