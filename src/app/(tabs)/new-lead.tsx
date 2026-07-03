@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Animated, Modal, FlatList } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Animated, Modal, FlatList, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
