@@ -163,7 +163,10 @@ export const LeadAPI = {
     try {
       const token = await getSalesforceToken();
       const query = encodeURIComponent(
-        "SELECT Id, FirstName, LastName, MobilePhone, Email, Status, City, CreatedDate, Description FROM Lead ORDER BY CreatedDate DESC"
+        `SELECT Id, FirstName, LastName, MobilePhone, Email, Status, City, State, PostalCode, CreatedDate,
+         Loan_Amount__c, Property_Type__c, Employment_Type__c, Tenure__c,
+         Property_City__c, Current_Step__c, Application_Status__c, Connector__c
+         FROM Lead ORDER BY CreatedDate DESC`
       );
       const res = await fetch(`${SF_INSTANCE_URL}/services/data/v59.0/query?q=${query}`, {
         headers: {
@@ -172,99 +175,57 @@ export const LeadAPI = {
         },
       });
 
-      if (!res.ok) {
-        throw new Error(`Failed to query leads: ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`Failed to query leads: ${res.status}`);
 
       const json = await res.json();
       const records = json.records || [];
       const randomColors = ['#DE1F26', '#2E7D32', '#EF6C00', '#FBC02D', '#1565C0', '#6A1B9A'];
 
-      return records.map((r: any, idx: number) => {
-        let product = 'Home Loan';
-        let amount = '5,00,000';
-        if (r.Description) {
-          const prodMatch = r.Description.match(/Product:\s*([^|]+)/);
-          const amtMatch = r.Description.match(/Loan Amount:\s*([^|]+)/);
-          if (prodMatch) product = prodMatch[1].trim();
-          if (amtMatch) {
-            const amtVal = parseFloat(amtMatch[1].trim());
-            if (!isNaN(amtVal)) {
-              amount = amtVal.toLocaleString('en-IN');
-            }
-          }
-        }
-
-        return {
-          id: r.Id,
-          name: `${r.FirstName || ''} ${r.LastName || ''}`.trim() || 'No Name',
-          product: product,
-          amount: amount,
-          status: mapLeadStatus(r.Status),
-          color: randomColors[idx % randomColors.length],
-          city: r.City || 'Unknown',
-          date: r.CreatedDate ? new Date(r.CreatedDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
-          mobile: r.MobilePhone,
-          email: r.Email,
-        };
-      });
+      return records.map((r: any, idx: number) => ({
+        id:                r.Id,
+        name:              `${r.FirstName || ''} ${r.LastName || ''}`.trim() || 'No Name',
+        product:           r.Property_Type__c || 'Home Loan',
+        amount:            r.Loan_Amount__c ? r.Loan_Amount__c.toLocaleString('en-IN') : '0',
+        status:            mapLeadStatus(r.Status),
+        color:             randomColors[idx % randomColors.length],
+        city:              r.Property_City__c || r.City || 'Unknown',
+        date:              r.CreatedDate ? new Date(r.CreatedDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
+        mobile:            r.MobilePhone,
+        email:             r.Email,
+        employment:        r.Employment_Type__c,
+        currentStep:       r.Current_Step__c,
+        applicationStatus: r.Application_Status__c,
+        connectorId:       r.Connector__c,
+      }));
     } catch (e) {
       console.warn('Direct Salesforce getLeads failed, returning mock lead list for testing');
       return [
         {
-          id: 'L001',
-          name: 'Amit Sharma',
-          product: 'Home Loan',
-          amount: '45,00,000',
-          status: 'Processing',
-          color: '#DE1F26',
-          city: 'Delhi',
-          date: '01 Jul 2026',
-          mobile: '9876543210',
-          email: 'amit.sharma@example.com',
-          employment: 'Salaried',
-          rcuVerified: true,
-          cibilVerified: true,
-          hasDeviation: false,
+          id: 'L001', name: 'Amit Sharma', product: 'Home Loan', amount: '45,00,000',
+          status: 'Processing', color: '#DE1F26', city: 'Delhi', date: '01 Jul 2026',
+          mobile: '9876543210', email: 'amit.sharma@example.com', employment: 'Salaried',
+          currentStep: 'Submitted', applicationStatus: 'Submitted',
+          rcuVerified: true, cibilVerified: true, hasDeviation: false,
         },
         {
-          id: 'L002',
-          name: 'Priya Patel',
-          product: 'LAP',
-          amount: '20,00,000',
-          status: 'Pending',
-          color: '#2E7D32',
-          city: 'Mumbai',
-          date: '30 Jun 2026',
-          mobile: '8765432109',
-          email: 'priya.patel@example.com',
-          employment: 'Self-Employed',
-          rcuVerified: false,
-          cibilVerified: false,
-          hasDeviation: true,
+          id: 'L002', name: 'Priya Patel', product: 'LAP', amount: '20,00,000',
+          status: 'Pending', color: '#2E7D32', city: 'Mumbai', date: '30 Jun 2026',
+          mobile: '8765432109', email: 'priya.patel@example.com', employment: 'Self-Employed',
+          currentStep: 'Personal Info', applicationStatus: 'Draft',
+          rcuVerified: false, cibilVerified: false, hasDeviation: true,
           deviationReason: 'CIBIL score is 620 (below required 650) — blocked pending deviation approval.',
         },
         {
-          id: 'L003',
-          name: 'Rohan Verma',
-          product: 'MSME Loan',
-          amount: '12,00,000',
-          status: 'Approved',
-          color: '#EF6C00',
-          city: 'Bangalore',
-          date: '28 Jun 2026',
-          mobile: '7654321098',
-          email: 'rohan.verma@example.com',
-          employment: 'Business Owner',
-          rcuVerified: true,
-          cibilVerified: true,
-          hasDeviation: false,
-        }
+          id: 'L003', name: 'Rohan Verma', product: 'MSME Loan', amount: '12,00,000',
+          status: 'Approved', color: '#EF6C00', city: 'Bangalore', date: '28 Jun 2026',
+          mobile: '7654321098', email: 'rohan.verma@example.com', employment: 'Business Owner',
+          currentStep: 'Submitted', applicationStatus: 'Submitted',
+          rcuVerified: true, cibilVerified: true, hasDeviation: false,
+        },
       ];
     }
   },
 
-  /** Fetch a single lead by ID */
   getLeadById: async (id: string): Promise<any> => {
     const token = await getSalesforceToken();
     const res = await fetch(`${SF_INSTANCE_URL}/services/apexrest/v1/leads/${id}`, {
@@ -274,34 +235,42 @@ export const LeadAPI = {
       },
     });
 
-    if (!res.ok) {
-      throw new Error(`Failed to fetch lead: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`Failed to fetch lead: ${res.status}`);
 
     const json = await res.json();
-    if (!json.success) {
-      throw new Error(json.message || 'Lead not found');
-    }
+    if (!json.success) throw new Error(json.message || 'Lead not found');
 
     const r = json.data;
     const randomColors = ['#DE1F26', '#2E7D32', '#EF6C00', '#FBC02D', '#1565C0', '#6A1B9A'];
-    
+
     return {
-      id: r.leadId,
-      name: `${r.firstName || ''} ${r.lastName || ''}`.trim() || 'No Name',
-      product: r.propertyType || 'Home Loan',
-      amount: r.loanAmount ? r.loanAmount.toLocaleString('en-IN') : '0',
-      status: mapLeadStatus(r.status),
-      color: randomColors[0],
-      city: r.city || 'Unknown',
-      date: r.createdDate ? new Date(r.createdDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
-      mobile: r.mobileNumber,
-      email: r.email,
-      employment: r.employmentType,
+      id:                r.leadId,
+      name:              `${r.firstName || ''} ${r.lastName || ''}`.trim() || 'No Name',
+      product:           r.propertyType || 'Home Loan',
+      amount:            r.loanAmount ? r.loanAmount.toLocaleString('en-IN') : '0',
+      status:            mapLeadStatus(r.status),
+      color:             randomColors[0],
+      city:              r.propertyCity || r.city || 'Unknown',
+      date:              r.createdDate ? new Date(r.createdDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
+      mobile:            r.mobileNumber,
+      email:             r.email,
+      employment:        r.employmentType,
+      // New onboarding fields
+      currentStep:       r.currentStep,
+      applicationStatus: r.applicationStatus,
+      propertyCity:      r.propertyCity,
+      propertyPincode:   r.propertyPincode,
+      submittedDate:     r.submittedDate,
+      connectorId:       r.connectorId,
+      annualIncome:      r.annualIncome,
+      propertyValue:     r.propertyValue,
+      loanTenure:        r.loanTenure,
+      remarks:           r.remarks,
+      lastModifiedDate:  r.lastModifiedDate,
     };
   },
 
-  /** Submit a new lead directly to Salesforce */
+  /** Submit a new lead directly to Salesforce — includes all onboarding fields */
   createLead: async (data: {
     name: string;
     mobile: string;
@@ -312,30 +281,47 @@ export const LeadAPI = {
     product: string;
     amount: number;
     tenure?: string;
-    location?: string;
+    location?: string;        // maps to City
+    state?: string;
+    pincode?: string;
     income?: string;
+    propertyValue?: number;
+    propertyCity?: string;
+    propertyPincode?: string;
+    currentStep?: string;     // onboarding step (e.g. 'Personal Info')
+    applicationStatus?: string; // 'Draft' | 'Submitted' | 'Approved'
+    remarks?: string;
+    connectorId?: string;     // Connector__c Salesforce record ID
     cibil?: string;
   }): Promise<any> => {
     const token = await getSalesforceToken();
-    
+
     const nameParts = (data.name || '').trim().split(/\s+/);
     const firstName = nameParts[0] || 'First';
-    const lastName = nameParts.slice(1).join(' ') || '.';
+    const lastName  = nameParts.slice(1).join(' ') || '.';
 
     const payload = {
-      firstName: firstName,
-      lastName: lastName,
-      mobileNumber: data.mobile || '9876543210',
-      email: data.email || '',
-      city: data.location || '',
-      employmentType: data.employment || 'Salaried',
-      annualIncome: data.income ? parseFloat(data.income) : 600000.00,
-      loanAmount: data.amount || 1000000.00,
-      propertyValue: (data.amount || 1000000.00) * 1.3,
-      propertyType: data.product || 'Apartment',
-      loanTenure: data.tenure ? parseInt(data.tenure) : 15,
-      leadSource: 'Mobile App',
-      status: 'Open - Not Contacted'
+      firstName:         firstName,
+      lastName:          lastName,
+      mobileNumber:      data.mobile || '9876543210',
+      email:             data.email || '',
+      city:              data.location || data.propertyCity || '',
+      state:             data.state || '',
+      pincode:           data.pincode || data.propertyPincode || '',
+      employmentType:    data.employment || 'Salaried',
+      annualIncome:      data.income ? parseFloat(data.income) : 600000,
+      loanAmount:        data.amount || 1000000,
+      propertyValue:     data.propertyValue || (data.amount || 1000000) * 1.3,
+      propertyType:      data.product || 'Apartment',
+      loanTenure:        data.tenure ? parseInt(data.tenure) : 15,
+      propertyCity:      data.propertyCity || data.location || '',
+      propertyPincode:   data.propertyPincode || data.pincode || '',
+      currentStep:       data.currentStep || 'Personal Info',
+      applicationStatus: data.applicationStatus || 'Draft',
+      remarks:           data.remarks || '',
+      connectorId:       data.connectorId || '',
+      leadSource:        'Mobile App',
+      status:            'Open - Not Contacted',
     };
 
     const res = await fetch(`${SF_INSTANCE_URL}/services/apexrest/v1/leads`, {
@@ -350,142 +336,55 @@ export const LeadAPI = {
     if (!res.ok) {
       const errText = await res.text();
       let errMsg = 'Failed to create lead';
-      try {
-        const errJson = JSON.parse(errText);
-        errMsg = errJson.message || errMsg;
-      } catch (e) {}
+      try { const errJson = JSON.parse(errText); errMsg = errJson.message || errMsg; } catch (e) {}
       throw new Error(errMsg);
     }
 
     const json = await res.json();
-    if (!json.success) {
-      throw new Error(json.message || 'Lead creation failed');
-    }
+    if (!json.success) throw new Error(json.message || 'Lead creation failed');
 
     const randomColors = ['#DE1F26', '#2E7D32', '#EF6C00', '#FBC02D', '#1565C0', '#6A1B9A'];
     return {
-      id: json.leadId,
-      name: data.name,
+      id:     json.leadId,
+      name:   data.name,
       product: data.product,
-      amount: data.amount.toLocaleString('en-IN'),
-      status: 'Pending',
-      color: randomColors[0],
-      city: data.location || 'Unknown',
-      date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-      mobile: data.mobile,
-      email: data.email,
+      amount:  data.amount.toLocaleString('en-IN'),
+      status:  'Pending',
+      color:   randomColors[Math.floor(Math.random() * randomColors.length)],
+      city:    data.location || data.propertyCity || 'Unknown',
+      date:    new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      mobile:  data.mobile,
+      email:   data.email,
+      currentStep:       data.currentStep || 'Personal Info',
+      applicationStatus: data.applicationStatus || 'Draft',
     };
   },
-};
 
-// ─── Onboarding API (Direct Salesforce Connection) ────────────────────────────
-export const OnboardingAPI = {
-  /** Create Onboarding record linked to a Lead */
-  createOnboarding: async (data: {
-    leadId: string;
-    fullName: string;
-    mobileNumber: string;
-    email: string;
-    propertyType: string;
-    propertyValue: number;
-    propertyCity: string;
-    propertyPincode: string;
-    loanAmount: number;
-    loanTenure: number;
-    employmentType: string;
-    annualIncome: number;
-    currentStep?: string;
-    applicationStatus?: string;
-    remarks?: string;
-  }): Promise<any> => {
-    const token = await getSalesforceToken();
-    const res = await fetch(`${SF_INSTANCE_URL}/services/apexrest/v1/onboarding`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      let errMsg = 'Failed to create onboarding';
-      try {
-        const errJson = JSON.parse(errText);
-        errMsg = errJson.message || errMsg;
-      } catch (e) {}
-      throw new Error(errMsg);
-    }
-
-    const json = await res.json();
-    if (!json.success) {
-      throw new Error(json.message || 'Onboarding creation failed');
-    }
-    return json;
-  },
-
-  /** Fetch onboarding by ID */
-  getOnboardingById: async (id: string): Promise<any> => {
-    const token = await getSalesforceToken();
-    const res = await fetch(`${SF_INSTANCE_URL}/services/apexrest/v1/onboarding/${id}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!res.ok) {
-      throw new Error(`Failed to fetch onboarding: ${res.status}`);
-    }
-
-    const json = await res.json();
-    if (!json.success) {
-      throw new Error(json.message || 'Onboarding not found');
-    }
-    return json.data;
-  },
-
-  /** Fetch onboarding by Lead ID */
-  getOnboardingByLeadId: async (leadId: string): Promise<any> => {
-    const token = await getSalesforceToken();
-    const res = await fetch(`${SF_INSTANCE_URL}/services/apexrest/v1/onboarding?leadId=${leadId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!res.ok) {
-      throw new Error(`Failed to fetch onboarding: ${res.status}`);
-    }
-
-    const json = await res.json();
-    if (!json.success) {
-      throw new Error(json.message || 'Onboarding not found');
-    }
-    return json.data;
-  },
-
-  /** Update onboarding details */
-  updateOnboarding: async (id: string, data: {
-    fullName?: string;
-    mobileNumber?: string;
+  /**
+   * Update a lead's onboarding progress or loan details.
+   * Replaces OnboardingAPI.updateOnboarding().
+   */
+  updateLead: async (leadId: string, data: {
+    city?: string;
+    state?: string;
+    pincode?: string;
     email?: string;
-    propertyType?: string;
-    propertyValue?: number;
-    propertyCity?: string;
-    propertyPincode?: string;
+    mobileNumber?: string;
+    annualIncome?: number;
     loanAmount?: number;
+    propertyValue?: number;
+    propertyType?: string;
     loanTenure?: number;
     employmentType?: string;
-    annualIncome?: number;
+    propertyCity?: string;
+    propertyPincode?: string;
     currentStep?: string;
     applicationStatus?: string;
     remarks?: string;
-  }): Promise<any> => {
+    status?: string;
+  }): Promise<void> => {
     const token = await getSalesforceToken();
-    const res = await fetch(`${SF_INSTANCE_URL}/services/apexrest/v1/onboarding/${id}`, {
+    const res = await fetch(`${SF_INSTANCE_URL}/services/apexrest/v1/leads/${leadId}`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -496,55 +395,82 @@ export const OnboardingAPI = {
 
     if (!res.ok) {
       const errText = await res.text();
-      let errMsg = 'Failed to update onboarding';
-      try {
-        const errJson = JSON.parse(errText);
-        errMsg = errJson.message || errMsg;
-      } catch (e) {}
+      let errMsg = 'Failed to update lead';
+      try { const errJson = JSON.parse(errText); errMsg = errJson.message || errMsg; } catch (e) {}
       throw new Error(errMsg);
     }
 
     const json = await res.json();
-    if (!json.success) {
-      throw new Error(json.message || 'Onboarding update failed');
-    }
-    return json;
+    if (!json.success) throw new Error(json.message || 'Lead update failed');
   },
 
-  /** Delete onboarding record */
-  deleteOnboarding: async (id: string): Promise<any> => {
-    const token = await getSalesforceToken();
-    const res = await fetch(`${SF_INSTANCE_URL}/services/apexrest/v1/onboarding/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+  /**
+   * Submit a lead application — sets applicationStatus to 'Submitted'.
+   * Replaces OnboardingAPI flow's final submit step.
+   */
+  submitLead: async (leadId: string, remarks?: string): Promise<void> => {
+    return LeadAPI.updateLead(leadId, {
+      applicationStatus: 'Submitted',
+      currentStep: 'Submitted',
+      remarks: remarks,
     });
-
-    if (!res.ok) {
-      throw new Error(`Failed to delete onboarding: ${res.status}`);
-    }
-
-    const json = await res.json();
-    if (!json.success) {
-      throw new Error(json.message || 'Onboarding deletion failed');
-    }
-    return json;
   },
 };
 
-// ─── Payout API (With Local Mock Fallback) ────────────────────────────────────
+// ─── Payout API (Direct Salesforce — DSA_Payout__c SOQL) ─────────────────────
 export const PayoutAPI = {
-  /** Fetch all payouts for the logged-in partner */
-  getPayouts: async (): Promise<any[]> => {
+  /**
+   * Fetch all payouts for the logged-in connector directly from Salesforce.
+   * Queries DSA_Payout__c using the SF OAuth token.
+   * Falls back to mock data if Salesforce is unavailable.
+   */
+  getPayouts: async (connectorId?: string): Promise<any[]> => {
     try {
-      const res = await fetch(`${BASE_URL}/api/payouts`, {
-        headers: await buildHeaders(),
-      });
-      return await handleResponse<any[]>(res);
+      const token = await getSalesforceToken();
+
+      // Build SOQL — filter by Connector__c if connectorId is provided
+      const whereClause = connectorId
+        ? `WHERE Connector__c = '${connectorId}'`
+        : '';
+      const query = encodeURIComponent(
+        `SELECT Id, Month__c, Amount__c, Lead_Count__c, Status__c, Payment_Date__c, Bank_Account__c 
+         FROM DSA_Payout__c ${whereClause} ORDER BY Payment_Date__c DESC`
+      );
+
+      const res = await fetch(
+        `${SF_INSTANCE_URL}/services/data/v59.0/query?q=${query}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error(`Payout query failed: ${res.status}`);
+
+      const json = await res.json();
+      const records = json.records || [];
+
+      return records.map((r: any) => ({
+        id: r.Id,
+        month: r.Month__c || '',
+        amount: r.Amount__c
+          ? `₹${Number(r.Amount__c).toLocaleString('en-IN')}`
+          : '₹0',
+        leads: r.Lead_Count__c || 0,
+        status: r.Status__c || 'Pending',
+        date: r.Payment_Date__c
+          ? new Date(r.Payment_Date__c).toLocaleDateString('en-IN', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+            })
+          : '',
+        bank: r.Bank_Account__c || '',
+      }));
     } catch (e) {
-      console.warn('Backend PayoutAPI offline, returning mock payouts');
+      console.warn('PayoutAPI: Salesforce query failed, returning mock payouts:', e);
       return [
         {
           id: 'P001',
@@ -569,29 +495,35 @@ export const PayoutAPI = {
   },
 };
 
-// ─── Partner API (With Local Mock Fallback) ───────────────────────────────────
+// ─── Partner API (Direct Salesforce — Connector__c SOQL) ──────────────────────
 export const PartnerAPI = {
-  /** Get full partner profile */
-  getProfile: async (): Promise<any> => {
+  /**
+   * Get full connector profile from Connector__c.
+   * Queries by Mobile__c using the Salesforce OAuth token directly.
+   * Falls back to mock if Salesforce is unavailable.
+   */
+  getProfile: async (mobile?: string): Promise<ConnectorRecord> => {
     try {
-      const res = await fetch(`${BASE_URL}/api/partner/profile`, {
-        headers: await buildHeaders(),
-      });
-      return await handleResponse(res);
+      if (!mobile) throw new Error('Mobile number required to fetch profile');
+      const profile = await ConnectorAPI.getConnectorByMobile(mobile);
+      if (!profile) throw new Error('Connector record not found');
+      return profile;
     } catch (e) {
-      console.warn('Backend PartnerAPI offline, returning mock profile');
+      console.warn('PartnerAPI: Salesforce profile fetch failed, returning mock profile:', e);
       return {
-        id: 'mock-partner-123',
+        id: 'mock-connector-001',
+        connectorId: 'DSA-08421',
         fullName: 'Rajesh Kumar',
-        mobileNumber: '9876543210',
+        mobile: mobile || '9876543210',
         email: 'rajesh@example.com',
-        city: 'Mumbai',
-        state: 'Maharashtra',
-        dob: '15 Mar 1988',
-        occupation: 'Financial Advisor',
-        accNumber: '50100012344521',
-        ifsc: 'HDFC0000001',
         pan: 'ABCDE1234F',
+        occupation: 'Financial Advisor',
+        bank: 'HDFC Bank',
+        bankAccount: '****4521',
+        ifsc: 'HDFC0000001',
+        residentialAddress: 'Mumbai, Maharashtra',
+        leadStatus: 'Active',
+        status: 'Active',
       };
     }
   },

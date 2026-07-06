@@ -153,6 +153,8 @@ interface AuthContextType {
   setPhoneNumber: (phone: string | null) => void;
   verifyOtp: (otp: string) => Promise<{ isNewPartner: boolean }>;
   logout: () => void;
+  // Connector record (full Salesforce Connector__c data)
+  connectorRecord: ConnectorRecord | null;
   // Leads
   leads: Lead[];
   addLead: (lead: Omit<Lead, 'id' | 'color' | 'date'>) => Promise<void>;
@@ -193,6 +195,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   const [dsaCode, setDsaCode] = useState<string | null>(null);
   const [connectorSfId, setConnectorSfId] = useState<string | null>(null);
+  const [connectorRecord, setConnectorRecord] = useState<ConnectorRecord | null>(null);
   const [pushToken, setPushToken] = useState<string | null>(null);
 
   // On mount: check for stored JWT → auto-login
@@ -235,9 +238,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const fetchPayoutsInBackground = async () => {
+  const fetchPayoutsInBackground = async (sfId?: string) => {
     try {
-      const data = await PayoutAPI.getPayouts();
+      const data = await PayoutAPI.getPayouts(sfId);
       setPayouts(data);
     } catch (e) {
       console.warn('Failed to fetch payouts:', e);
@@ -259,7 +262,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchPayouts = async () => {
     setIsApiLoading(true);
     try {
-      const data = await PayoutAPI.getPayouts();
+      const data = await PayoutAPI.getPayouts(connectorSfId || undefined);
       setPayouts(data);
     } catch (e) {
       console.warn('fetchPayouts error:', e);
@@ -287,6 +290,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!result.isNewConnector && result.connector) {
         const c = result.connector;
         setConnectorSfId(c.id || null);
+        setConnectorRecord(c);  // ← store full Connector__c record
         await savePartnerData(c as object);
         setOnboardingData((prev) => ({
           ...prev,
@@ -302,7 +306,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (c.connectorId) setDsaCode(c.connectorId);
         setIsAuthenticated(true);
         fetchLeadsInBackground();
-        fetchPayoutsInBackground();
+        fetchPayoutsInBackground(c.id);
       }
 
       return { isNewPartner: result.isNewConnector };
@@ -350,6 +354,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Store Salesforce record ID and DSA code
       setConnectorSfId(result.id);
+      setConnectorRecord({ ...connectorPayload, id: result.id, connectorId: result.connectorId }); // ← store record
       if (result.connectorId) setDsaCode(result.connectorId);
 
       // Save connector profile locally
@@ -357,7 +362,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setIsAuthenticated(true);
       fetchLeadsInBackground();
-      fetchPayoutsInBackground();
+      fetchPayoutsInBackground(result.id);
     } finally {
       setIsApiLoading(false);
     }
@@ -373,6 +378,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setOnboardingData(DEFAULT_ONBOARDING);
     setDsaCode(null);
     setConnectorSfId(null);
+    setConnectorRecord(null);
     setPushToken(null);
   };
 
@@ -418,6 +424,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setPhoneNumber,
         verifyOtp,
         logout,
+        connectorRecord,
         leads,
         addLead,
         fetchLeads,

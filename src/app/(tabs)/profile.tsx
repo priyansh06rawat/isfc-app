@@ -13,7 +13,10 @@ export default function ProfileScreen() {
     setNotificationsEnabled,
     darkModeEnabled,
     setDarkModeEnabled,
-    leads
+    leads,
+    dsaCode,
+    phoneNumber,
+    connectorRecord,
   } = useAuth();
 
   // Animation hooks
@@ -60,17 +63,26 @@ export default function ProfileScreen() {
           {/* Profile Hero Section */}
           <View style={styles.hero}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>RK</Text>
+              <Text style={styles.avatarText}>
+                {(connectorRecord?.fullName || onboardingData.fullName || 'RK')
+                  .split(' ')
+                  .map((w: string) => w[0])
+                  .slice(0, 2)
+                  .join('')
+                  .toUpperCase() || 'RK'}
+              </Text>
             </View>
             <Text style={[styles.name, darkModeEnabled && styles.textDark]}>
-              {onboardingData.fullName || 'Rajesh Kumar'}
+              {connectorRecord?.fullName || onboardingData.fullName || 'Rajesh Kumar'}
             </Text>
             <Text style={styles.subtitle}>
-              DSA Partner • Code: DSA-08421
+              DSA Partner • Code: {dsaCode || connectorRecord?.connectorId || 'DSA-08421'}
             </Text>
             <View style={styles.verifiedBadge}>
               <View style={styles.verifiedDot} />
-              <Text style={styles.verifiedText}>KYC Verified</Text>
+              <Text style={styles.verifiedText}>
+                {connectorRecord?.leadStatus === 'Active' ? 'KYC Verified' : connectorRecord?.leadStatus || 'KYC Verified'}
+              </Text>
             </View>
           </View>
 
@@ -98,7 +110,9 @@ export default function ProfileScreen() {
                 <MaterialCommunityIcons name="cellphone" size={16} color="#DE1F26" style={styles.iconMargin} />
                 <Text style={styles.rowLabel}>Mobile</Text>
               </View>
-              <Text style={[styles.rowValue, darkModeEnabled && styles.textDark]}>+91 98XXXXXXXX</Text>
+              <Text style={[styles.rowValue, darkModeEnabled && styles.textDark]}>
+                +91 {connectorRecord?.mobile || phoneNumber || '98XXXXXXXX'}
+              </Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.row}>
@@ -107,17 +121,17 @@ export default function ProfileScreen() {
                 <Text style={styles.rowLabel}>Email</Text>
               </View>
               <Text style={[styles.rowValue, darkModeEnabled && styles.textDark]}>
-                {onboardingData.email || 'rajesh@example.com'}
+                {connectorRecord?.email || onboardingData.email || 'rajesh@example.com'}
               </Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.row}>
               <View style={styles.labelRow}>
                 <MaterialCommunityIcons name="city-variant-outline" size={16} color="#DE1F26" style={styles.iconMargin} />
-                <Text style={styles.rowLabel}>City</Text>
+                <Text style={styles.rowLabel}>Address</Text>
               </View>
               <Text style={[styles.rowValue, darkModeEnabled && styles.textDark]}>
-                {onboardingData.city || 'Mumbai, Maharashtra'}
+                {connectorRecord?.residentialAddress || onboardingData.city || 'Mumbai, Maharashtra'}
               </Text>
             </View>
             <View style={styles.divider} />
@@ -159,7 +173,11 @@ export default function ProfileScreen() {
                 <Text style={styles.rowLabel}>Bank</Text>
               </View>
               <Text style={[styles.rowValue, darkModeEnabled && styles.textDark]}>
-                {onboardingData.ifsc ? `HDFC ***${onboardingData.accNumber.slice(-4)}` : 'HDFC ***4521'}
+                {connectorRecord?.bank
+                  ? `${connectorRecord.bank} ***${(connectorRecord.bankAccount || '').slice(-4)}`
+                  : onboardingData.ifsc
+                    ? `HDFC ***${onboardingData.accNumber.slice(-4)}`
+                    : 'HDFC ***4521'}
               </Text>
             </View>
             <View style={styles.divider} />
@@ -169,7 +187,7 @@ export default function ProfileScreen() {
                 <Text style={styles.rowLabel}>PAN</Text>
               </View>
               <Text style={[styles.rowValue, darkModeEnabled && styles.textDark]}>
-                {onboardingData.pan || 'ABCDE1234F'}
+                {connectorRecord?.pan || onboardingData.pan || 'ABCDE1234F'}
               </Text>
             </View>
           </View>
