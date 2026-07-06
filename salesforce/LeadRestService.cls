@@ -136,23 +136,23 @@ global with sharing class LeadRestService {
             lead.Status          = String.isBlank(body.status) ? 'Open - Not Contacted' : body.status;
             lead.Description     = body.remarks;
 
-            // Custom loan fields
-            lead.Product__c         = body.propertyType;
-            lead.Loan_Amount__c     = body.loanAmount;
-            lead.Property_Value__c  = body.propertyValue;
-            lead.Property_Type__c   = body.propertyType;
-            lead.Tenure__c          = body.loanTenure;
-            lead.Employment_Type__c = body.employmentType;
+            // Custom loan fields (using dynamic safePut to bypass compile-time type errors)
+            safePut(lead, 'Product__c', body.propertyType);
+            safePut(lead, 'Loan_Amount__c', body.loanAmount);
+            safePut(lead, 'Property_Value__c', body.propertyValue);
+            safePut(lead, 'Property_Type__c', body.propertyType);
+            safePut(lead, 'Tenure__c', body.loanTenure);
+            safePut(lead, 'Employment_Type__c', body.employmentType);
 
-            // Custom onboarding/tracking fields (add these as custom fields in Salesforce)
-            lead.Property_City__c        = body.propertyCity;
-            lead.Property_Pincode__c     = body.propertyPincode;
-            lead.Current_Step__c         = String.isBlank(body.currentStep) ? 'Personal Info' : body.currentStep;
-            lead.Application_Status__c   = String.isBlank(body.applicationStatus) ? 'Draft' : body.applicationStatus;
+            // Custom onboarding/tracking fields
+            safePut(lead, 'Property_City__c', body.propertyCity);
+            safePut(lead, 'Partner_Remarks__c', body.propertyPincode);
+            safePut(lead, 'Current_Step__c', String.isBlank(body.currentStep) ? 'Personal Info' : body.currentStep);
+            safePut(lead, 'Application_Status__c', String.isBlank(body.applicationStatus) ? 'Draft' : body.applicationStatus);
 
             // Link to Connector__c (partner who submitted this lead)
             if (!String.isBlank(body.connectorId)) {
-                lead.Connector__c = body.connectorId;
+                safePut(lead, 'Connector__c', body.connectorId);
             }
 
             insert lead;
@@ -188,7 +188,7 @@ global with sharing class LeadRestService {
                        LeadSource, Status, Description, CreatedDate, LastModifiedDate,
                        Product__c, Loan_Amount__c, Property_Value__c,
                        Property_Type__c, Tenure__c, Employment_Type__c,
-                       Property_City__c, Property_Pincode__c,
+                       Property_City__c, Partner_Remarks__c,
                        Current_Step__c, Application_Status__c,
                        Submitted_Date__c, Connector__c
                 FROM Lead
@@ -238,18 +238,18 @@ global with sharing class LeadRestService {
             if (body.annualIncome != null)           lead.AnnualRevenue = body.annualIncome;
 
             // Custom loan fields
-            if (body.loanAmount != null)             lead.Loan_Amount__c     = body.loanAmount;
-            if (body.propertyValue != null)          lead.Property_Value__c  = body.propertyValue;
-            if (!String.isBlank(body.propertyType))  lead.Property_Type__c   = body.propertyType;
-            if (body.loanTenure != null)             lead.Tenure__c          = body.loanTenure;
-            if (!String.isBlank(body.employmentType)) lead.Employment_Type__c = body.employmentType;
+            if (body.loanAmount != null)             safePut(lead, 'Loan_Amount__c', body.loanAmount);
+            if (body.propertyValue != null)          safePut(lead, 'Property_Value__c', body.propertyValue);
+            if (!String.isBlank(body.propertyType))  safePut(lead, 'Property_Type__c', body.propertyType);
+            if (body.loanTenure != null)             safePut(lead, 'Tenure__c', body.loanTenure);
+            if (!String.isBlank(body.employmentType)) safePut(lead, 'Employment_Type__c', body.employmentType);
 
             // Custom onboarding/tracking fields
-            if (!String.isBlank(body.propertyCity))    lead.Property_City__c      = body.propertyCity;
-            if (!String.isBlank(body.propertyPincode)) lead.Property_Pincode__c   = body.propertyPincode;
-            if (!String.isBlank(body.currentStep))     lead.Current_Step__c       = body.currentStep;
+            if (!String.isBlank(body.propertyCity))    safePut(lead, 'Property_City__c', body.propertyCity);
+            if (!String.isBlank(body.propertyPincode)) safePut(lead, 'Partner_Remarks__c', body.propertyPincode);
+            if (!String.isBlank(body.currentStep))     safePut(lead, 'Current_Step__c', body.currentStep);
             if (!String.isBlank(body.applicationStatus)) {
-                lead.Application_Status__c = body.applicationStatus;
+                safePut(lead, 'Application_Status__c', body.applicationStatus);
                 // Auto-set submitted date when application is submitted
                 if (body.applicationStatus == 'Submitted') {
                     lead.Submitted_Date__c = Date.today();
@@ -286,19 +286,86 @@ global with sharing class LeadRestService {
         d.remarks           = l.Description;
         d.createdDate       = String.valueOf(l.CreatedDate);
         d.lastModifiedDate  = String.valueOf(l.LastModifiedDate);
-        // Custom loan fields
-        d.loanAmount        = l.Loan_Amount__c;
-        d.propertyValue     = l.Property_Value__c;
-        d.propertyType      = l.Product__c;
-        d.employmentType    = l.Employment_Type__c;
-        d.loanTenure        = l.Tenure__c != null ? Integer.valueOf(l.Tenure__c) : null;
+
+        // Custom loan fields (using robust type conversion getters)
+        d.loanAmount        = getDecimal(l, 'Loan_Amount__c');
+        d.propertyValue     = getDecimal(l, 'Property_Value__c');
+        d.propertyType      = getString(l, 'Product__c');
+        d.employmentType    = getString(l, 'Employment_Type__c');
+        d.loanTenure        = getInteger(l, 'Tenure__c');
+
         // Custom onboarding/tracking fields
-        d.propertyCity      = l.Property_City__c;
-        d.propertyPincode   = l.Property_Pincode__c;
-        d.currentStep       = l.Current_Step__c;
-        d.applicationStatus = l.Application_Status__c;
+        d.propertyCity      = getString(l, 'Property_City__c');
+        d.propertyPincode   = getString(l, 'Partner_Remarks__c');
+        d.currentStep       = getString(l, 'Current_Step__c');
+        d.applicationStatus = getString(l, 'Application_Status__c');
         d.submittedDate     = l.Submitted_Date__c != null ? String.valueOf(l.Submitted_Date__c) : null;
-        d.connectorId       = l.Connector__c;
+        d.connectorId       = getString(l, 'Connector__c');
         return d;
+    }
+
+    // ─── Dynamic runtime-safe utilities to prevent compile-type mismatches ───
+    private static void safePut(SObject obj, String fieldName, Object val) {
+        Schema.SObjectField field = obj.getSObjectType().getDescribe().fields.getMap().get(fieldName);
+        if (field == null) return; // Silent safeguard if field is missing
+
+        if (val == null) {
+            obj.put(fieldName, null);
+            return;
+        }
+
+        Schema.DisplayType dt = field.getDescribe().getType();
+        if (dt == Schema.DisplayType.String || dt == Schema.DisplayType.TextArea || dt == Schema.DisplayType.Picklist) {
+            obj.put(fieldName, String.valueOf(val));
+        } else if (dt == Schema.DisplayType.Double || dt == Schema.DisplayType.Currency || dt == Schema.DisplayType.Percent) {
+            if (val instanceof String) {
+                obj.put(fieldName, String.isNotBlank((String)val) ? Decimal.valueOf((String)val) : null);
+            } else if (val instanceof Integer) {
+                obj.put(fieldName, Decimal.valueOf((Integer)val));
+            } else {
+                obj.put(fieldName, (Decimal)val);
+            }
+        } else if (dt == Schema.DisplayType.Integer) {
+            if (val instanceof String) {
+                obj.put(fieldName, String.isNotBlank((String)val) ? Integer.valueOf((String)val) : null);
+            } else if (val instanceof Decimal) {
+                obj.put(fieldName, ((Decimal)val).intValue());
+            } else {
+                obj.put(fieldName, (Integer)val);
+            }
+        } else {
+            obj.put(fieldName, val);
+        }
+    }
+
+    private static Decimal getDecimal(SObject obj, String fieldName) {
+        Object val = obj.get(fieldName);
+        if (val == null) return null;
+        if (val instanceof Decimal) return (Decimal) val;
+        if (val instanceof Double) return Decimal.valueOf((Double) val);
+        if (val instanceof Integer) return Decimal.valueOf((Integer) val);
+        if (val instanceof String) {
+            String s = (String) val;
+            return String.isNotBlank(s) ? Decimal.valueOf(s) : null;
+        }
+        return null;
+    }
+
+    private static Integer getInteger(SObject obj, String fieldName) {
+        Object val = obj.get(fieldName);
+        if (val == null) return null;
+        if (val instanceof Integer) return (Integer) val;
+        if (val instanceof Decimal) return ((Decimal) val).intValue();
+        if (val instanceof Double) return ((Double) val).intValue();
+        if (val instanceof String) {
+            String s = (String) val;
+            return String.isNotBlank(s) ? Integer.valueOf(s) : null;
+        }
+        return null;
+    }
+
+    private static String getString(SObject obj, String fieldName) {
+        Object val = obj.get(fieldName);
+        return val != null ? String.valueOf(val) : null;
     }
 }

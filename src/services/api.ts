@@ -5,6 +5,8 @@ export const SF_LOGIN_URL = process.env.EXPO_PUBLIC_SF_LOGIN_URL || 'https://log
 export const SF_INSTANCE_URL = process.env.EXPO_PUBLIC_SF_INSTANCE_URL || 'https://orgfarm-6ebfdf48c8-dev-ed.develop.my.salesforce.com';
 export const SF_CLIENT_ID = process.env.EXPO_PUBLIC_SF_CLIENT_ID || 'YOUR_CONSUMER_KEY';
 export const SF_CLIENT_SECRET = process.env.EXPO_PUBLIC_SF_CLIENT_SECRET || 'YOUR_CONSUMER_SECRET';
+export const SF_USERNAME = process.env.EXPO_PUBLIC_SF_USERNAME || '';
+export const SF_PASSWORD = process.env.EXPO_PUBLIC_SF_PASSWORD || '';
 
 // ─── Spring Boot Config (Used as backup/fallback) ─────────────────────────────
 export const BASE_URL = 'http://localhost:8080';
@@ -14,7 +16,8 @@ let cachedToken: string | null = null;
 let tokenExpiryTime: number = 0; // Epoch timestamp in ms
 
 /**
- * Dynamically retrieves a Salesforce Bearer token using OAuth 2.0 Client Credentials.
+ * Dynamically retrieves a Salesforce Bearer token using OAuth 2.0.
+ * Uses Username-Password flow if SF_USERNAME is provided, otherwise falls back to Client Credentials.
  * Caches the token to avoid repetitive requests.
  */
 async function getSalesforceToken(): Promise<string> {
@@ -27,7 +30,13 @@ async function getSalesforceToken(): Promise<string> {
   // Otherwise, request a new one
   try {
     const params = new URLSearchParams();
-    params.append('grant_type', 'client_credentials');
+    if (SF_USERNAME) {
+      params.append('grant_type', 'password');
+      params.append('username', SF_USERNAME);
+      params.append('password', SF_PASSWORD);
+    } else {
+      params.append('grant_type', 'client_credentials');
+    }
     params.append('client_id', SF_CLIENT_ID);
     params.append('client_secret', SF_CLIENT_SECRET);
 
