@@ -668,59 +668,21 @@ export const ConnectorAPI = {
     }
   },
 
-  /**
-   * Create a new Connector__c record with full onboarding details.
-   * Called after completing the KYC onboarding flow.
-   */
   createConnector: async (data: ConnectorRecord): Promise<{ id: string; connectorId: string }> => {
     try {
       const token = await getSalesforceToken();
 
-      // Map app fields → Salesforce field API names
       const payload = {
-        Name:                       data.fullName || data.name || 'Connector',
-        Name__c:                    data.fullName || '',
-        Mobile__c:                  data.mobile || '',
-        Alternative_Mobile__c:      data.alternateMobile || '',
-        Email__c:                   data.email || '',
-        PAN__c:                     data.pan || '',
-        Pincode__c:                 data.pincode || '',
-        ResidentialAddress__c:      data.residentialAddress || '',
-        Landmark__c:                data.landmark || '',
-        OfficeAddress__c:           data.officeAddress || '',
-        OfficeAddresLanmark__c:     data.officeLandmark || '',
-        OfficeAddresPincode__c:     data.officePincode || '',
-        Occupation__c:              data.occupation || '',
-        OccupationYear__c:          data.occupationYear || '',
-        Company__c:                 data.company || '',
-        CompanyGST__c:              data.companyGST || '',
-        CompanyPAN__c:              data.companyPAN || '',
-        ConnectorType__c:           data.connectorType || 'DSA',
-        IDProofType__c:             data.idProofType || '',
-        IDProofNumber__c:           data.idProofNumber || '',
-        IDProofDocument__c:         data.idProofDocument || '',
-        AddressProofType__c:        data.addressProofType || '',
-        AddressProofNumber__c:      data.addressProofNumber || '',
-        AddressProofDocument__c:    data.addressProofDocument || '',
-        Bank__c:                    data.bank || '',
-        BankAccount__c:             data.bankAccount || '',
-        NameInBank__c:              data.nameInBank || '',
-        IFSC__c:                    data.ifsc || '',
-        Branch__c:                  data.branch || '',
-        ChequeDocument__c:          data.chequeDocument || '',
-        Profile__c:                 data.profile || '',
-        Tieup__c:                   data.tieup || '',
-        LO_Id__c:                   data.loId || '',
-        LO_Mobile__c:               data.loMobile || '',
-        LeadStatus__c:              data.leadStatus || 'Onboarding',
-        Status__c:                  data.status || 'Pending',
-        DeviceID__c:                data.deviceId || '',
-        NotificationId__c:          data.notificationId || '',
-        NotificationEnable__c:      data.notificationEnable ?? false,
-        verifiedTermsCondition__c:  data.verifiedTermsCondition ?? false,
+        Process:            'softsignup',
+        Name:               data.fullName || data.name || 'Connector',
+        Mobile:             data.mobile || '',
+        Email:              data.email || '',
+        DeviceID:           data.deviceId || '',
+        NotificationId:     data.notificationId || '',
+        NotificationEnable: data.notificationEnable ?? false,
       };
 
-      const res = await fetch(`${SF_INSTANCE_URL}/services/data/v59.0/sobjects/Connector__c`, {
+      const res = await fetch(`${SF_INSTANCE_URL}/services/apexrest/Connector/Signup`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -729,12 +691,17 @@ export const ConnectorAPI = {
         body: JSON.stringify(payload),
       });
 
-      const json = await res.json();
-      if (!res.ok || json.errors?.length > 0) {
-        throw new Error(json[0]?.message || `Create failed: ${res.status}`);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`SoftSignup failed: ${res.status} — ${text}`);
       }
 
-      return { id: json.id, connectorId: data.connectorId || json.id };
+      const json = await res.json();
+      if (!json.success) throw new Error(json.errorMessages || 'SoftSignup failed');
+
+      // The Apex REST response returns "Connector ID" as key
+      const conId = json['Connector ID'] || json.connectorId || '';
+      return { id: conId, connectorId: conId };
     } catch (e) {
       console.warn('ConnectorAPI.createConnector failed — returning mock:', e);
       return { id: 'mock-connector-001', connectorId: 'DSAP12345' };
@@ -803,52 +770,51 @@ export const ConnectorAPI = {
     }
   },
 
-  /**
-   * Update an existing Connector__c record (partial update — only send changed fields).
-   */
-  updateConnector: async (id: string, data: Partial<ConnectorRecord>): Promise<void> => {
+  updateConnector: async (connectorId: string, data: Partial<ConnectorRecord>): Promise<void> => {
     try {
       const token = await getSalesforceToken();
 
-      const payload: Record<string, any> = {};
-      if (data.fullName !== undefined)             payload.Name__c = data.fullName;
-      if (data.email !== undefined)                payload.Email__c = data.email;
-      if (data.pan !== undefined)                  payload.PAN__c = data.pan;
-      if (data.pincode !== undefined)              payload.Pincode__c = data.pincode;
-      if (data.residentialAddress !== undefined)   payload.ResidentialAddress__c = data.residentialAddress;
-      if (data.landmark !== undefined)             payload.Landmark__c = data.landmark;
-      if (data.officeAddress !== undefined)        payload.OfficeAddress__c = data.officeAddress;
-      if (data.officeLandmark !== undefined)       payload.OfficeAddresLanmark__c = data.officeLandmark;
-      if (data.officePincode !== undefined)        payload.OfficeAddresPincode__c = data.officePincode;
-      if (data.occupation !== undefined)           payload.Occupation__c = data.occupation;
-      if (data.occupationYear !== undefined)       payload.OccupationYear__c = data.occupationYear;
-      if (data.company !== undefined)              payload.Company__c = data.company;
-      if (data.companyGST !== undefined)           payload.CompanyGST__c = data.companyGST;
-      if (data.companyPAN !== undefined)           payload.CompanyPAN__c = data.companyPAN;
-      if (data.idProofType !== undefined)          payload.IDProofType__c = data.idProofType;
-      if (data.idProofNumber !== undefined)        payload.IDProofNumber__c = data.idProofNumber;
-      if (data.idProofDocument !== undefined)      payload.IDProofDocument__c = data.idProofDocument;
-      if (data.addressProofType !== undefined)     payload.AddressProofType__c = data.addressProofType;
-      if (data.addressProofNumber !== undefined)   payload.AddressProofNumber__c = data.addressProofNumber;
-      if (data.addressProofDocument !== undefined) payload.AddressProofDocument__c = data.addressProofDocument;
-      if (data.bank !== undefined)                 payload.Bank__c = data.bank;
-      if (data.bankAccount !== undefined)          payload.BankAccount__c = data.bankAccount;
-      if (data.nameInBank !== undefined)           payload.NameInBank__c = data.nameInBank;
-      if (data.ifsc !== undefined)                 payload.IFSC__c = data.ifsc;
-      if (data.branch !== undefined)               payload.Branch__c = data.branch;
-      if (data.chequeDocument !== undefined)       payload.ChequeDocument__c = data.chequeDocument;
-      if (data.leadStatus !== undefined)           payload.LeadStatus__c = data.leadStatus;
-      if (data.status !== undefined)               payload.Status__c = data.status;
-      if (data.verifiedLO !== undefined)           payload.verifiedLO__c = data.verifiedLO;
-      if (data.verifiedTermsCondition !== undefined) payload.verifiedTermsCondition__c = data.verifiedTermsCondition;
-      if (data.notificationId !== undefined)       payload.NotificationId__c = data.notificationId;
-      if (data.notificationEnable !== undefined)   payload.NotificationEnable__c = data.notificationEnable;
-      if (data.deviceId !== undefined)             payload.DeviceID__c = data.deviceId;
-      if (data.loId !== undefined)                 payload.LO_Id__c = data.loId;
-      if (data.loMobile !== undefined)             payload.LO_Mobile__c = data.loMobile;
+      const payload = {
+        Process:                'profileupdate',
+        ConnectorID:            connectorId,
+        Name:                   data.fullName || data.name || '',
+        Mobile:                 data.mobile || '',
+        Email:                  data.email,
+        PAN:                    data.pan,
+        Pincode:                data.pincode,
+        ResidentialAddress:     data.residentialAddress,
+        Landmark:               data.landmark,
+        OfficeAddress:          data.officeAddress,
+        OfficeAddressLandmark:  data.officeLandmark,
+        OfficeAddressPincode:   data.officePincode,
+        Occupation:             data.occupation,
+        OccupationYear:         data.occupationYear,
+        Company:                data.company,
+        CompanyGST:             data.companyGST,
+        CompanyPAN:             data.companyPAN,
+        ConnectorType:          data.connectorType,
+        IDProofType:            data.idProofType,
+        IDProofAddress:         data.idProofNumber,
+        IDProofDocument:        data.idProofDocument,
+        AddressProofType:       data.addressProofType,
+        AddressProofNumber:     data.addressProofNumber,
+        AddressProofDocument:   data.addressProofDocument,
+        Bank:                   data.bank,
+        BankAccount:            data.bankAccount,
+        NameInBank:             data.nameInBank,
+        ISFC:                   data.ifsc,
+        Branch:                 data.branch,
+        ChequeDocument:         data.chequeDocument,
+        Profile:                data.profile,
+        Tieup:                  data.tieup,
+        LOMobile:               data.loMobile,
+        VerifiedLO:             data.verifiedLO,
+        AcceptTermsCondition:   data.verifiedTermsCondition,
+        AlternativeMobile:      data.alternateMobile,
+      };
 
-      const res = await fetch(`${SF_INSTANCE_URL}/services/data/v59.0/sobjects/Connector__c/${id}`, {
-        method: 'PATCH',
+      const res = await fetch(`${SF_INSTANCE_URL}/services/apexrest/Connector/Signup`, {
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -856,10 +822,13 @@ export const ConnectorAPI = {
         body: JSON.stringify(payload),
       });
 
-      if (res.status !== 204) {
+      if (!res.ok) {
         const text = await res.text();
-        throw new Error(`Update failed: ${res.status} — ${text}`);
+        throw new Error(`Profile update failed: ${res.status} — ${text}`);
       }
+
+      const json = await res.json();
+      if (!json.success) throw new Error(json.errorMessages || 'Profile update failed');
     } catch (e) {
       console.warn('ConnectorAPI.updateConnector failed:', e);
     }
