@@ -682,7 +682,7 @@ export const ConnectorAPI = {
         NotificationEnable: data.notificationEnable ?? false,
       };
 
-      const res = await fetch(`${SF_INSTANCE_URL}/services/apexrest/Connector/Signup`, {
+      const res = await fetch(`${SF_INSTANCE_URL}/services/apexrest/v1/connector/signup`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -813,7 +813,7 @@ export const ConnectorAPI = {
         AlternativeMobile:      data.alternateMobile,
       };
 
-      const res = await fetch(`${SF_INSTANCE_URL}/services/apexrest/Connector/Signup`, {
+      const res = await fetch(`${SF_INSTANCE_URL}/services/apexrest/v1/connector/signup`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
