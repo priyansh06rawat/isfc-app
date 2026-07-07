@@ -738,10 +738,35 @@ export const ConnectorAPI = {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error(`SoftSignup failed: ${res.status} — ${await res.text()}`);
-      const json = await res.json();
-      if (!json.success) throw new Error(json.errorMessages || 'SoftSignup failed');
-      const conId = json['Connector ID'] || json.connectorId || '';
+      let conId = '';
+      if (!res.ok) {
+        const text = await res.text();
+        try {
+          const jsonError = JSON.parse(text);
+          if (res.status === 406 && jsonError.errorMessages?.includes('User Already Registered')) {
+            console.log('Connector API: User already registered, proceeding to patch existing record.');
+            // Proceed gracefully since the record already exists from OTP flow
+          } else {
+            throw new Error(`SoftSignup failed: ${res.status} — ${text}`);
+          }
+        } catch (e) {
+          if (e instanceof SyntaxError) {
+             throw new Error(`SoftSignup failed: ${res.status} — ${text}`);
+          }
+          throw e;
+        }
+      } else {
+        const json = await res.json();
+        if (!json.success) {
+           if (json.status == 406 && json.errorMessages?.includes('User Already Registered')) {
+               console.log('Connector API: User already registered, proceeding to patch existing record.');
+           } else {
+               throw new Error(json.errorMessages || 'SoftSignup failed');
+           }
+        } else {
+           conId = json['Connector ID'] || json.connectorId || '';
+        }
+      }
 
       // 2. Query the actual Salesforce Record Id using the Mobile number
       const query = encodeURIComponent(`SELECT Id FROM Connector__c WHERE Mobile__c = '${data.mobile}' LIMIT 1`);
