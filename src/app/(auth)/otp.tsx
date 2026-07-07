@@ -32,12 +32,6 @@ export default function OtpScreen() {
     ]).start();
   }, []);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setOtp(['1', '2', '3', '4', '5', '6']);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleChange = (text: string, index: number) => {
     const newOtp = [...otp];
@@ -136,11 +130,6 @@ export default function OtpScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.demoNotice}>
-            <Text style={styles.demoText}>
-              Demo mode: OTP is pre-filled as <Text style={styles.demoTextBold}>123456</Text>
-            </Text>
-          </View>
         </Animated.View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -228,22 +217,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#2D3134',
-  },
-  demoNotice: {
-    marginTop: 'auto',
-    padding: 14,
-    backgroundColor: 'rgba(222,31,38,0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(222,31,38,0.15)',
-    borderRadius: 8,
-  },
-  demoText: {
-    fontSize: 12,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  demoTextBold: {
-    color: '#DE1F26',
-    fontWeight: '600',
   },
 });

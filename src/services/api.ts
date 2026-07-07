@@ -529,7 +529,7 @@ export const PayoutAPI = {
       );
 
       const res = await fetch(
-        `/services/data/v59.0/query?q=${query}`,
+        `${getInstanceUrl()}/services/data/v59.0/query?q=${query}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -896,51 +896,49 @@ export const ConnectorAPI = {
     }
   },
 
+  /**
+   * Update a Connector__c record directly via sObject REST PATCH.
+   * connectorId is the 18-char Salesforce Record Id (e.g. a4nfs00000002hlAAA).
+   */
   updateConnector: async (connectorId: string, data: Partial<ConnectorRecord>): Promise<void> => {
     try {
       const token = await getSalesforceToken();
 
-      const payload = {
-        Process:                'profileupdate',
-        ConnectorID:            connectorId,
-        Name:                   data.fullName || data.name || '',
-        Mobile:                 data.mobile || '',
-        Email:                  data.email,
-        PAN:                    data.pan,
-        Pincode:                data.pincode,
-        ResidentialAddress:     data.residentialAddress,
-        Landmark:               data.landmark,
-        OfficeAddress:          data.officeAddress,
-        OfficeAddressLandmark:  data.officeLandmark,
-        OfficeAddressPincode:   data.officePincode,
-        Occupation:             data.occupation,
-        OccupationYear:         data.occupationYear,
-        Company:                data.company,
-        CompanyGST:             data.companyGST,
-        CompanyPAN:             data.companyPAN,
-        ConnectorType:          data.connectorType,
-        IDProofType:            data.idProofType,
-        IDProofAddress:         data.idProofNumber,
-        IDProofDocument:        data.idProofDocument,
-        AddressProofType:       data.addressProofType,
-        AddressProofNumber:     data.addressProofNumber,
-        AddressProofDocument:   data.addressProofDocument,
-        Bank:                   data.bank,
-        BankAccount:            data.bankAccount,
-        NameInBank:             data.nameInBank,
-        ISFC:                   data.ifsc,
-        Branch:                 data.branch,
-        ChequeDocument:         data.chequeDocument,
-        Profile:                data.profile,
-        Tieup:                  data.tieup,
-        LOMobile:               data.loMobile,
-        VerifiedLO:             data.verifiedLO,
-        AcceptTermsCondition:   data.verifiedTermsCondition,
-        AlternativeMobile:      data.alternateMobile,
-      };
+      const payload: Record<string, any> = {};
+      if (data.fullName     !== undefined) payload.Name__c               = data.fullName || data.name;
+      if (data.email        !== undefined) payload.Email__c              = data.email;
+      if (data.pan          !== undefined) payload.PAN__c                = data.pan;
+      if (data.pincode      !== undefined) payload.Pincode__c            = data.pincode;
+      if (data.residentialAddress !== undefined) payload.ResidentialAddress__c = data.residentialAddress;
+      if (data.landmark     !== undefined) payload.Landmark__c           = data.landmark;
+      if (data.officeAddress  !== undefined) payload.OfficeAddress__c    = data.officeAddress;
+      if (data.officeLandmark !== undefined) payload.OfficeAddresLanmark__c = data.officeLandmark;
+      if (data.officePincode  !== undefined) payload.OfficeAddresPincode__c = data.officePincode;
+      if (data.occupation   !== undefined) payload.Occupation__c         = data.occupation;
+      if (data.occupationYear !== undefined) payload.OccupationYear__c   = data.occupationYear;
+      if (data.company      !== undefined) payload.Company__c            = data.company;
+      if (data.companyGST   !== undefined) payload.CompanyGST__c        = data.companyGST;
+      if (data.companyPAN   !== undefined) payload.CompanyPAN__c        = data.companyPAN;
+      if (data.connectorType  !== undefined) payload.ConnectorType__c   = data.connectorType;
+      if (data.idProofType  !== undefined) payload.IDProofType__c       = data.idProofType;
+      if (data.idProofNumber  !== undefined) payload.IDProofNumber__c   = data.idProofNumber;
+      if (data.addressProofType !== undefined) payload.AddressProofType__c = data.addressProofType;
+      if (data.addressProofNumber !== undefined) payload.AddressProofNumber__c = data.addressProofNumber;
+      if (data.bank         !== undefined) payload.Bank__c               = data.bank;
+      if (data.bankAccount  !== undefined) payload.BankAccount__c       = data.bankAccount;
+      if (data.nameInBank   !== undefined) payload.NameInBank__c        = data.nameInBank;
+      if (data.ifsc         !== undefined) payload.IFSC__c               = data.ifsc;
+      if (data.branch       !== undefined) payload.Branch__c             = data.branch;
+      if (data.notificationId !== undefined) payload.NotificationId__c  = data.notificationId;
+      if (data.notificationEnable !== undefined) payload.NotificationEnable__c = data.notificationEnable;
+      if (data.deviceId     !== undefined) payload.DeviceID__c           = data.deviceId;
+      if (data.alternateMobile !== undefined) payload.Alternative_Mobile__c = data.alternateMobile;
+      if (data.verifiedTermsCondition !== undefined) payload.verifiedTermsCondition__c = data.verifiedTermsCondition;
 
-      const res = await fetch(`${getInstanceUrl()}/services/apexrest/v1/connector/signup`, {
-        method: 'POST',
+      if (Object.keys(payload).length === 0) return; // Nothing to update
+
+      const res = await fetch(`${getInstanceUrl()}/services/data/v59.0/sobjects/Connector__c/${connectorId}`, {
+        method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -952,9 +950,6 @@ export const ConnectorAPI = {
         const text = await res.text();
         throw new Error(`Profile update failed: ${res.status} — ${text}`);
       }
-
-      const json = await res.json();
-      if (!json.success) throw new Error(json.errorMessages || 'Profile update failed');
     } catch (e) {
       console.warn('ConnectorAPI.updateConnector failed:', e);
     }
