@@ -8,6 +8,7 @@ import { Input } from '../../components/ui/Input';
 import { TopNav } from '../../components/ui/TopNav';
 import { useAuth } from '../../context/AuthContext';
 import { sendStatusEmail } from '../../services/notifications';
+import * as DocumentPicker from 'expo-document-picker';
 
 export default function KycEnrollmentLetterScreen() {
   const { onboardingData, updateOnboardingData } = useAuth();
@@ -31,14 +32,25 @@ export default function KycEnrollmentLetterScreen() {
     ).start();
   }, []);
 
-  const handleUpload = () => {
-    updateOnboardingData({ enrollmentLetterUploaded: true, enrollmentSkipped: false });
-    if (onboardingData.email) {
-      sendStatusEmail({
-        to: onboardingData.email,
-        dsaName: onboardingData.fullName || 'Partner',
-        stage: 'Enrollment Letter Uploaded',
+  const handleUpload = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*'],
+        copyToCacheDirectory: true,
       });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        updateOnboardingData({ enrollmentLetterUploaded: true, enrollmentSkipped: false });
+        if (onboardingData.email) {
+          sendStatusEmail({
+            to: onboardingData.email,
+            dsaName: onboardingData.fullName || 'Partner',
+            stage: 'Enrollment Letter Uploaded',
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Document upload error:', e);
+      alert('Failed to pick document.');
     }
   };
 

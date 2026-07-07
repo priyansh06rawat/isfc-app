@@ -402,15 +402,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Prepend to local state
       setLeads((prev) => [created, ...prev]);
     } catch (e) {
-      // Fallback: add locally if API fails
-      const randomColors = ['#DE1F26', '#2E7D32', '#EF6C00', '#FBC02D', '#1565C0', '#6A1B9A'];
-      const fallback: Lead = {
-        ...newLead,
-        id: `L${String(leads.length + 1).padStart(3, '0')}`,
-        color: randomColors[Math.floor(Math.random() * randomColors.length)],
-        date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-      };
-      setLeads((prev) => [fallback, ...prev]);
+      console.warn('Failed to add lead:', e);
+      throw e;
     } finally {
       setIsApiLoading(false);
     }

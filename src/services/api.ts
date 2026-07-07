@@ -200,14 +200,17 @@ function mapProductToPropertyType(product?: string): string {
 
 export const LeadAPI = {
   /** Fetch all leads for the logged-in partner (via SOQL query) */
-  getLeads: async (): Promise<any[]> => {
+  getLeads: async (connectorId?: string): Promise<any[]> => {
+    if (!connectorId) return [];
+    
     try {
       const token = await getSalesforceToken();
+      const whereClause = `WHERE Connector__c = '${connectorId}'`;
       const query = encodeURIComponent(
         `SELECT Id, FirstName, LastName, MobilePhone, Email, Status, City, State, PostalCode, CreatedDate,
          Loan_Amount__c, Property_Type__c, Employment_Type__c, Tenure__c,
          Property_City__c, Current_Step__c, Application_Status__c, Connector__c
-         FROM Lead ORDER BY CreatedDate DESC`
+         FROM Lead ${whereClause} ORDER BY CreatedDate DESC`
       );
       const res = await fetch(`${getInstanceUrl()}/services/data/v59.0/query?q=${query}`, {
         headers: {
@@ -239,31 +242,8 @@ export const LeadAPI = {
         connectorId:       r.Connector__c,
       }));
     } catch (e) {
-      console.warn('Direct Salesforce getLeads failed, returning mock lead list for testing');
-      return [
-        {
-          id: 'L001', name: 'Amit Sharma', product: 'Home Loan', amount: '45,00,000',
-          status: 'Processing', color: '#DE1F26', city: 'Delhi', date: '01 Jul 2026',
-          mobile: '9876543210', email: 'amit.sharma@example.com', employment: 'Salaried',
-          currentStep: 'Submitted', applicationStatus: 'Submitted',
-          rcuVerified: true, cibilVerified: true, hasDeviation: false,
-        },
-        {
-          id: 'L002', name: 'Priya Patel', product: 'LAP', amount: '20,00,000',
-          status: 'Pending', color: '#2E7D32', city: 'Mumbai', date: '30 Jun 2026',
-          mobile: '8765432109', email: 'priya.patel@example.com', employment: 'Self-Employed',
-          currentStep: 'Personal Info', applicationStatus: 'Draft',
-          rcuVerified: false, cibilVerified: false, hasDeviation: true,
-          deviationReason: 'CIBIL score is 620 (below required 650) — blocked pending deviation approval.',
-        },
-        {
-          id: 'L003', name: 'Rohan Verma', product: 'MSME Loan', amount: '12,00,000',
-          status: 'Approved', color: '#EF6C00', city: 'Bangalore', date: '28 Jun 2026',
-          mobile: '7654321098', email: 'rohan.verma@example.com', employment: 'Business Owner',
-          currentStep: 'Submitted', applicationStatus: 'Submitted',
-          rcuVerified: true, cibilVerified: true, hasDeviation: false,
-        },
-      ];
+      console.warn('Direct Salesforce getLeads failed:', e);
+      throw e;
     }
   },
 

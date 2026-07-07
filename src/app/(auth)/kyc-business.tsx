@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { TopNav } from '../../components/ui/TopNav';
 import { useAuth } from '../../context/AuthContext';
+import * as DocumentPicker from 'expo-document-picker';
 
 export default function KycBusinessScreen() {
   const { onboardingData, updateOnboardingData } = useAuth();
@@ -43,8 +44,19 @@ export default function KycBusinessScreen() {
     }, 1500);
   };
 
-  const handleUpload = () => {
-    updateOnboardingData({ businessDocUploaded: true });
+  const handleUpload = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*'],
+        copyToCacheDirectory: true,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        updateOnboardingData({ businessDocUploaded: true });
+      }
+    } catch (e) {
+      console.warn('Document upload error:', e);
+      alert('Failed to pick document.');
+    }
   };
 
   const handleContinue = () => {

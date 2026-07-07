@@ -8,6 +8,7 @@ import { Input } from '../../components/ui/Input';
 import { TopNav } from '../../components/ui/TopNav';
 import { useAuth } from '../../context/AuthContext';
 import { sendStatusEmail } from '../../services/notifications';
+import * as DocumentPicker from 'expo-document-picker';
 
 const ITR_YEARS = ['AY 2024-25', 'AY 2023-24', 'AY 2022-23'];
 
@@ -47,14 +48,25 @@ export default function KycItrScreen() {
     }
   }, []);
 
-  const handleUploadItr = () => {
-    updateOnboardingData({ itrUploaded: true });
-    if (onboardingData.email) {
-      sendStatusEmail({
-        to: onboardingData.email,
-        dsaName: onboardingData.fullName || 'Partner',
-        stage: 'ITR Details Submitted',
+  const handleUploadItr = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*'],
+        copyToCacheDirectory: true,
       });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        updateOnboardingData({ itrUploaded: true });
+        if (onboardingData.email) {
+          sendStatusEmail({
+            to: onboardingData.email,
+            dsaName: onboardingData.fullName || 'Partner',
+            stage: 'ITR Details Submitted',
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Document upload error:', e);
+      Alert.alert('Upload Failed', 'Could not pick document.');
     }
   };
 
