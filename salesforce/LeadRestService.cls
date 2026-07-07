@@ -109,10 +109,6 @@ global with sharing class LeadRestService {
                 res.statusCode = 400;
                 return new LeadApiResponse(false, null, 'First name and last name are required', null);
             }
-            if (String.isBlank(body.mobileNumber)) {
-                res.statusCode = 400;
-                return new LeadApiResponse(false, null, 'Mobile number is required', null);
-            }
             if (body.loanAmount == null || body.loanAmount <= 0) {
                 res.statusCode = 400;
                 return new LeadApiResponse(false, null, 'Loan amount must be greater than 0', null);
@@ -122,8 +118,10 @@ global with sharing class LeadRestService {
             Lead lead = new Lead();
             lead.FirstName       = body.firstName;
             lead.LastName        = body.lastName;
-            lead.MobilePhone     = body.mobileNumber;
-            lead.Email           = body.email;
+            // Use safePut for MobilePhone & Email to handle field-level security restrictions
+            // on the Integration User profile without failing the entire request
+            safePut(lead, 'MobilePhone', body.mobileNumber);
+            safePut(lead, 'Email',       body.email);
 
             // Location — use propertyCity if city is blank
             lead.City            = String.isBlank(body.city) ? body.propertyCity : body.city;
@@ -308,6 +306,9 @@ global with sharing class LeadRestService {
     private static void safePut(SObject obj, String fieldName, Object val) {
         Schema.SObjectField field = obj.getSObjectType().getDescribe().fields.getMap().get(fieldName);
         if (field == null) return; // Silent safeguard if field is missing
+        // Skip fields the Integration User cannot access (field-level security)
+        Schema.DescribeFieldResult dfr = field.getDescribe();
+        if (!dfr.isAccessible() || !dfr.isUpdateable()) return;
 
         if (val == null) {
             obj.put(fieldName, null);
