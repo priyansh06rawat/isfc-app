@@ -61,8 +61,14 @@ export default function ReviewScreen() {
 
   const doSubmit = async () => {
     try {
-      await submitRegistration();
-      router.push('/(auth)/success' as any);
+      const newDsaCode = await submitRegistration();
+      Alert.alert(
+        'Registration Successful 🎉',
+        `Your DSA Code is:\n\n${newDsaCode || 'Generated Successfully'}\n\nYou can now start referring leads!`,
+        [
+          { text: 'Go to Dashboard', onPress: () => router.push('/(tabs)' as any) }
+        ]
+      );
     } catch (e: any) {
       Alert.alert('Submission Failed', e.message || 'Please try again.');
     }

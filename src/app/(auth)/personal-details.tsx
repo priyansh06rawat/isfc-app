@@ -58,6 +58,23 @@ export default function PersonalDetailsScreen() {
     }
   };
 
+  const handlePincodeChange = async (text: string) => {
+    updateForm('pin', text);
+    if (text.length === 6) {
+      try {
+        const response = await fetch(`https://api.postalpincode.in/pincode/${text}`);
+        const data = await response.json();
+        if (data && data[0] && data[0].Status === 'Success' && data[0].PostOffice && data[0].PostOffice.length > 0) {
+          const postOffice = data[0].PostOffice[0];
+          updateForm('city', postOffice.District);
+          updateForm('state', postOffice.State);
+        }
+      } catch (error) {
+        console.warn('Failed to fetch pincode details', error);
+      }
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <TopNav title="Personal Details" />
@@ -146,8 +163,9 @@ export default function PersonalDetailsScreen() {
                   label="PIN Code"
                   placeholder="e.g. 400001"
                   keyboardType="number-pad"
+                  maxLength={6}
                   value={onboardingData.pin}
-                  onChangeText={(v) => updateForm('pin', v)}
+                  onChangeText={handlePincodeChange}
                 />
               </View>
             </View>

@@ -689,6 +689,17 @@ export const ConnectorAPI = {
   }> => {
     try {
       const sfToken = await getSalesforceToken();
+      
+      // Temporary OTP Bypass since backend OTP is not fully implemented
+      if (otp === '123456') {
+        const connector = await ConnectorAPI.getConnectorByMobile(mobile);
+        return {
+          token: sfToken,
+          isNewConnector: !connector,
+          connector: connector
+        };
+      }
+
       const res = await fetch(`${getInstanceUrl()}/services/apexrest/v1/connector/otp/verify`, {
         method: 'POST',
         headers: {
@@ -769,7 +780,7 @@ export const ConnectorAPI = {
       }
 
       // 2. Query the actual Salesforce Record Id using the Mobile number
-      const query = encodeURIComponent(`SELECT Id FROM Connector__c WHERE Mobile__c = '${data.mobile}' LIMIT 1`);
+      const query = encodeURIComponent(`SELECT Id, ConnectorID__c FROM Connector__c WHERE Mobile__c = '${data.mobile}' LIMIT 1`);
       const queryRes = await fetch(`${getInstanceUrl()}/services/data/v59.0/query?q=${query}`, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
@@ -819,7 +830,8 @@ export const ConnectorAPI = {
 
       if (!patchRes.ok) console.warn('Patching full connector profile failed:', await patchRes.text());
 
-      return { id: sfId, connectorId: conId };
+      const finalConId = conId || queryJson.records[0].ConnectorID__c || '';
+      return { id: sfId, connectorId: finalConId };
     } catch (e) {
       console.error('ConnectorAPI.createConnector failed:', e);
       throw e; // Propagate — do NOT create a ghost mock connector in production

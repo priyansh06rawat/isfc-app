@@ -97,16 +97,7 @@ export default function LoginScreen() {
                 </Text>
               </View>
 
-              <View style={styles.dividerContainer}>
-                <View style={styles.divider} />
-                <Text style={styles.dividerText}>or sign in with</Text>
-                <View style={styles.divider} />
-              </View>
-
-              <View style={styles.socialButtons}>
-                <Button title="Aadhaar OTP" variant="outline" style={styles.socialBtn} />
-                <Button title="DigiLocker" variant="outline" style={styles.socialBtn} />
-              </View>
+              <View style={{ height: 24 }} />
 
               <View style={styles.secureNotice}>
                 <View style={styles.secureTitleRow}>

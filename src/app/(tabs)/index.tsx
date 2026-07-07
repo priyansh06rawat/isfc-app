@@ -360,7 +360,7 @@ export default function DashboardScreen() {
               </View>
               <View style={styles.rmContactButtons}>
                 <TouchableOpacity 
-                  style={[styles.rmContactBtn, { width: '100%' }]} 
+                  style={styles.rmContactBtn} 
                   onPress={() => {
                     Linking.openURL('tel:18005728888').catch(() => {
                       Alert.alert('Calling Support', 'India Shelter Helpline: 1800-572-8888');
@@ -372,7 +372,7 @@ export default function DashboardScreen() {
                   <Text style={styles.rmContactBtnText}>Call: 1800-572-8888 (Toll Free)</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  style={[styles.rmContactBtn, { width: '100%', marginTop: 8 }]} 
+                  style={styles.rmContactBtn} 
                   onPress={() => {
                     Linking.openURL('mailto:customer.care@indiashelter.in').catch(() => {
                       Alert.alert('Email Support', 'customer.care@indiashelter.in');
@@ -923,8 +923,8 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
   rmContactButtons: {
-    flexDirection: 'row',
-    gap: 12,
+    flexDirection: 'column',
+    gap: 8,
     marginBottom: 24,
   },
   rmContactBtn: {

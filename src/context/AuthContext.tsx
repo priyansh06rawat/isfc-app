@@ -173,7 +173,7 @@ interface AuthContextType {
   // Onboarding
   onboardingData: OnboardingData;
   updateOnboardingData: (data: Partial<OnboardingData>) => void;
-  submitRegistration: () => Promise<void>;
+  submitRegistration: () => Promise<string | undefined>;
   // DSA Code
   dsaCode: string | null;
   // Connector__c record ID (Salesforce)
@@ -419,6 +419,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsAuthenticated(true);
       fetchLeadsInBackground(result.id);
       fetchPayoutsInBackground(result.id);
+      
+      return result.connectorId;
     } finally {
       setIsApiLoading(false);
     }
