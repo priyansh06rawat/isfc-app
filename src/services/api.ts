@@ -754,6 +754,7 @@ export const ConnectorAPI = {
     try {
       const token = await getSalesforceToken();
 
+      // 1. Soft signup (bypasses required field validations, generates ConnectorID__c)
       const payload = {
         Process:            'softsignup',
         Name:               data.fullName || data.name || 'Connector',
@@ -766,24 +767,67 @@ export const ConnectorAPI = {
 
       const res = await fetch(`${getInstanceUrl()}/services/apexrest/v1/connector/signup`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`SoftSignup failed: ${res.status} — ${text}`);
-      }
-
+      if (!res.ok) throw new Error(`SoftSignup failed: ${res.status} — ${await res.text()}`);
       const json = await res.json();
       if (!json.success) throw new Error(json.errorMessages || 'SoftSignup failed');
-
-      // The Apex REST response returns "Connector ID" as key
       const conId = json['Connector ID'] || json.connectorId || '';
-      return { id: conId, connectorId: conId };
+
+      // 2. Query the actual Salesforce Record Id using the Mobile number
+      const query = encodeURIComponent(`SELECT Id FROM Connector__c WHERE Mobile__c = '${data.mobile}' LIMIT 1`);
+      const queryRes = await fetch(`${getInstanceUrl()}/services/data/v59.0/query?q=${query}`, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      const queryJson = await queryRes.json();
+      if (!queryJson.records || queryJson.records.length === 0) {
+        throw new Error('Connector record not found after signup');
+      }
+      const sfId = queryJson.records[0].Id;
+
+      // 3. Patch the remaining full profile fields via standard sObject REST API
+      const patchPayload = {
+        Name__c:               data.fullName || data.name || '',
+        PAN__c:                data.pan || '',
+        Pincode__c:            data.pincode || '',
+        ResidentialAddress__c: data.residentialAddress || '',
+        OfficeAddress__c:      data.officeAddress || '',
+        OfficeAddresPincode__c: data.officePincode || '',
+        Occupation__c:         data.occupation || '',
+        OccupationYear__c:     data.occupationYear || '',
+        CompanyGST__c:         data.companyGST || '',
+        Company__c:            data.company || '',
+        BankAccount__c:        data.bankAccount || '',
+        NameInBank__c:         data.nameInBank || '',
+        IFSC__c:               data.ifsc || '',
+        IDProofType__c:        data.idProofType || '',
+        IDProofNumber__c:      data.idProofNumber || '',
+        AddressProofType__c:   data.addressProofType || '',
+        AddressProofNumber__c: data.addressProofNumber || '',
+        ConnectorType__c:      data.connectorType || 'DSA',
+        LeadStatus__c:         data.leadStatus || 'Onboarding',
+        Status__c:             data.status || 'Pending',
+        verifiedTermsCondition__c: data.verifiedTermsCondition ?? false,
+      };
+
+      // Clean empty fields to avoid overriding with empty strings unnecessarily
+      Object.keys(patchPayload).forEach(key => {
+        if (patchPayload[key as keyof typeof patchPayload] === '') {
+          delete patchPayload[key as keyof typeof patchPayload];
+        }
+      });
+
+      const patchRes = await fetch(`${getInstanceUrl()}/services/data/v59.0/sobjects/Connector__c/${sfId}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(patchPayload),
+      });
+
+      if (!patchRes.ok) console.warn('Patching full connector profile failed:', await patchRes.text());
+
+      return { id: sfId, connectorId: conId };
     } catch (e) {
       console.warn('ConnectorAPI.createConnector failed — returning mock:', e);
       return { id: 'mock-connector-001', connectorId: 'DSAP12345' };
