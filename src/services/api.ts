@@ -1,5 +1,6 @@
 import { getToken, removeToken } from './storage';
 import Constants from 'expo-constants';
+import { URLSearchParams } from 'react-native-url-polyfill';
 
 import * as FileSystem from 'expo-file-system';
 
