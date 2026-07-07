@@ -337,32 +337,25 @@ export const LeadAPI = {
     const firstName = nameParts[0] || 'First';
     const lastName  = nameParts.slice(1).join(' ') || '.';
 
-    const payload = {
-      firstName:         firstName,
-      lastName:          lastName,
-      mobileNumber:      data.mobile || '9876543210',
-      email:             data.email || '',
-      city:              data.location || data.propertyCity || '',
-      state:             data.state || '',
-      pincode:           data.pincode || data.propertyPincode || '',
-      employmentType:    data.employment || 'Salaried',
-      annualIncome:      data.income ? parseFloat(data.income) : 600000,
+    // Use Salesforce standard sObject REST API directly.
+    // This bypasses the custom Apex class which has field-level security
+    // and picklist access issues on the Integration User profile in Partial Sandbox.
     const payload: Record<string, any> = {
-      FirstName:          firstName,
-      LastName:           lastName,
-      Company:            `${firstName} ${lastName}`,
-      Email:              data.email || '',
-      City:               data.location || data.propertyCity || '',
-      State:              data.state || '',
-      PostalCode:         data.pincode || data.propertyPincode || '',
-      LeadSource:         'Online Business Partner', // valid picklist value in Partial Sandbox
-      Status:             'New',                     // valid picklist value in Partial Sandbox
-      Description:        data.remarks || '',
-      // Custom fields
-      Loan_Amount__c:     data.amount || 1000000,
-      Employment_Type__c: data.employment || 'Salaried',
-      Property_City__c:   data.propertyCity || data.location || '',
-      Current_Step__c:    data.currentStep || 'Personal Info',
+      FirstName:             firstName,
+      LastName:              lastName,
+      Company:               `${firstName} ${lastName}`,
+      Email:                 data.email || '',
+      City:                  data.location || data.propertyCity || '',
+      State:                 data.state || '',
+      PostalCode:            data.pincode || data.propertyPincode || '',
+      LeadSource:            'Online Business Partner', // valid picklist in Partial Sandbox
+      Status:                'New',                     // valid picklist in Partial Sandbox
+      Description:           data.remarks || '',
+      // Custom loan & onboarding fields
+      Loan_Amount__c:        data.amount || 1000000,
+      Employment_Type__c:    data.employment || 'Salaried',
+      Property_City__c:      data.propertyCity || data.location || '',
+      Current_Step__c:       data.currentStep || 'Personal Info',
       Application_Status__c: data.applicationStatus || 'Draft',
     };
 

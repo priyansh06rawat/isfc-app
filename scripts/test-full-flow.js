@@ -102,50 +102,40 @@ async function main() {
   console.log('');
 
   // Step 4: Create Lead — same payload as app createLead
-  console.log('--- Step 4: Create Lead via /v1/leads ---');
+  console.log('--- Step 4: Create Lead via Standard REST API ---');
   const leadRes = await req(
-    SF_INSTANCE_URL + '/services/apexrest/v1/leads',
+    SF_INSTANCE_URL + '/services/data/v59.0/sobjects/Lead',
     { method: 'POST', headers },
     JSON.stringify({
-      firstName:         'Demo',
-      lastName:          'TestLead',
-      mobileNumber:      '7777777700',
-      email:             'demolead@gmail.com',
-      city:              'Delhi',
-      state:             'Delhi',
-      pincode:           '110001',
-      employmentType:    'Salaried',
-      annualIncome:      600000,
-      loanAmount:        2000000,
-      propertyValue:     2600000,
-      propertyType:      'Home Purchase',           // ✅ valid picklist value
-      loanTenure:        15,
-      propertyCity:      'Delhi',
-      propertyPincode:   '110001',
-      currentStep:       'Personal Info',
-      applicationStatus: 'Draft',
-      remarks:           'Demo test lead',
-      connectorId:       connectorId || '',
-      leadSource:        'Online Business Partner', // ✅ valid picklist value
-      status:            'New',                     // ✅ valid picklist value
+      FirstName:          'Demo',
+      LastName:           'TestLead',
+      Company:            'Demo TestLead',
+      MobilePhone:        '7777777700',
+      Email:              'demolead@gmail.com',
+      City:               'Delhi',
+      State:              'Delhi',
+      PostalCode:         '110001',
+      LeadSource:         'Online Business Partner',
+      Status:             'New',
+      Description:        'Demo test lead',
+      Loan_Amount__c:     2000000,
+      Employment_Type__c: 'Salaried',
+      Property_City__c:   'Delhi',
+      Current_Step__c:    'Personal Info',
+      Application_Status__c: 'Draft',
+      Connector__c:       connectorId || null
     })
   );
   console.log(`Status: ${leadRes.status} | ${JSON.stringify(leadRes.body)}`);
-  const leadOk = leadRes.status === 201 && leadRes.body.success;
-  console.log(leadOk ? '✅ Lead created OK! Lead ID: ' + leadRes.body.leadId : '❌ Lead creation FAILED');
+  const leadOk = leadRes.status === 201;
+  console.log(leadOk ? '✅ Lead created OK! Lead ID: ' + leadRes.body.id : '❌ Lead creation FAILED');
   console.log('');
 
   // Summary
   console.log('=== SUMMARY ===');
   console.log('OTP Request:      ', otpOk   ? '✅ PASS' : '❌ FAIL');
   console.log('Connector Signup: ', signupOk ? '✅ PASS' : '⚠️  CHECK');
-  console.log('Lead Creation:    ', leadOk   ? '✅ PASS' : '❌ FAIL - NEEDS APEX FIX DEPLOYED');
-  
-  if (!leadOk) {
-    console.log('\n⚠️  ACTION REQUIRED: Deploy the updated LeadRestService.cls to your Partial Sandbox!');
-    console.log('   Go to: https://isfc--partial.sandbox.my.salesforce.com/lightning/setup/ApexClasses/home');
-    console.log('   Open LeadRestService → Edit → Paste the fixed code from salesforce/LeadRestService.cls → Save');
-  }
+  console.log('Lead Creation:    ', leadOk   ? '✅ PASS' : '❌ FAIL');
 }
 
 main().catch(console.error);
