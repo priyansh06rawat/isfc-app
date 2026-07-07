@@ -97,12 +97,16 @@ export default function LeadsScreen() {
   const filteredLeads = leads.filter((lead) => {
     const matchesFilter = activeFilter === 'All' || lead.status.toLowerCase() === activeFilter.toLowerCase();
     
-    const query = search.toLowerCase();
+    if (!search.trim()) return matchesFilter;
+
+    const query = search.trim().toLowerCase();
     const matchesSearch = 
       lead.name.toLowerCase().includes(query) ||
-      lead.id.toLowerCase().includes(query) ||
+      (lead.mobile || '').toLowerCase().includes(query) ||
       lead.product.toLowerCase().includes(query) ||
-      lead.city.toLowerCase().includes(query);
+      (lead.city || '').toLowerCase().includes(query) ||
+      (lead.amount || '').toLowerCase().includes(query) ||
+      (lead.status || '').toLowerCase().includes(query);
 
     return matchesFilter && matchesSearch;
   });

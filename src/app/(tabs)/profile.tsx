@@ -14,6 +14,7 @@ export default function ProfileScreen() {
     darkModeEnabled,
     setDarkModeEnabled,
     leads,
+    payouts,
     dsaCode,
     phoneNumber,
     connectorRecord,
@@ -43,8 +44,14 @@ export default function ProfileScreen() {
   };
 
   const handleCallSupport = () => {
-    Linking.openURL('tel:1234567890').catch(() => {
-      Alert.alert('Call Support', 'Dialing Support: 1234567890...');
+    Linking.openURL('tel:18005728888').catch(() => {
+      Alert.alert('Call Support', 'India Shelter Helpline: 1800-572-8888');
+    });
+  };
+
+  const handleEmailSupport = () => {
+    Linking.openURL('mailto:customer.care@indiashelter.in').catch(() => {
+      Alert.alert('Email Support', 'customer.care@indiashelter.in');
     });
   };
 
@@ -93,11 +100,15 @@ export default function ProfileScreen() {
               <Text style={styles.statLabel}>Total Leads</Text>
             </View>
             <View style={[styles.statBox, darkModeEnabled && styles.cardDark]}>
-              <Text style={[styles.statValue, { color: '#10B981' }]}>₹4.2Cr</Text>
+              <Text style={[styles.statValue, { color: '#10B981' }]}>
+                ₹{payouts.filter(p => p.status === 'Paid').reduce((sum, p) => sum + (parseFloat(String(p.amount).replace(/[₹,]/g, '')) || 0), 0).toLocaleString('en-IN') || '0'}
+              </Text>
               <Text style={styles.statLabel}>Disbursed</Text>
             </View>
             <View style={[styles.statBox, darkModeEnabled && styles.cardDark]}>
-              <Text style={[styles.statValue, { color: '#F59E0B' }]}>₹8.4L</Text>
+              <Text style={[styles.statValue, { color: '#F59E0B' }]}>
+                ₹{payouts.reduce((sum, p) => sum + (parseFloat(String(p.amount).replace(/[₹,]/g, '')) || 0), 0).toLocaleString('en-IN') || '0'}
+              </Text>
               <Text style={styles.statLabel}>Earned</Text>
             </View>
           </View>
@@ -234,9 +245,17 @@ export default function ProfileScreen() {
             <TouchableOpacity style={styles.rowClick} onPress={handleCallSupport}>
               <View style={styles.labelRow}>
                 <MaterialCommunityIcons name="phone-outline" size={16} color="#DE1F26" style={styles.iconMargin} />
-                <Text style={styles.rowLabel}>Support: 1234567890</Text>
+                <Text style={styles.rowLabel}>Helpline: 1800-572-8888</Text>
               </View>
               <Text style={styles.arrowText}>Call</Text>
+            </TouchableOpacity>
+            <View style={styles.divider} />
+            <TouchableOpacity style={styles.rowClick} onPress={handleEmailSupport}>
+              <View style={styles.labelRow}>
+                <MaterialCommunityIcons name="email-outline" size={16} color="#DE1F26" style={styles.iconMargin} />
+                <Text style={styles.rowLabel}>customer.care@indiashelter.in</Text>
+              </View>
+              <Text style={styles.arrowText}>Email</Text>
             </TouchableOpacity>
             <View style={styles.divider} />
             <TouchableOpacity style={styles.rowClick} onPress={handleViewAgreement}>

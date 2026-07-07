@@ -513,7 +513,8 @@ export const PayoutAPI = {
   /**
    * Fetch all payouts for the logged-in connector directly from Salesforce.
    * Queries DSA_Payout__c using the SF OAuth token.
-   * Falls back to mock data if Salesforce is unavailable.
+   * Returns [] if the object doesn't exist yet in the org (graceful empty state).
+   * NOTE: DSA_Payout__c must be created in Salesforce before payouts will appear.
    */
   getPayouts: async (connectorId?: string): Promise<any[]> => {
     try {
@@ -538,7 +539,18 @@ export const PayoutAPI = {
         }
       );
 
-      if (!res.ok) throw new Error(`Payout query failed: ${res.status}`);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => []);
+        // INVALID_TYPE means the object doesn't exist in the org — return empty gracefully
+        const isObjectMissing = Array.isArray(errJson) && errJson.some((e: any) =>
+          e.errorCode === 'INVALID_TYPE' || (e.message || '').includes('DSA_Payout__c')
+        );
+        if (isObjectMissing) {
+          console.warn('PayoutAPI: DSA_Payout__c object not yet configured in Salesforce — returning empty payouts');
+          return [];
+        }
+        throw new Error(`Payout query failed: ${res.status}`);
+      }
 
       const json = await res.json();
       const records = json.records || [];
@@ -561,27 +573,8 @@ export const PayoutAPI = {
         bank: r.Bank_Account__c || '',
       }));
     } catch (e) {
-      console.warn('PayoutAPI: Salesforce query failed, returning mock payouts:', e);
-      return [
-        {
-          id: 'P001',
-          month: 'May 2026',
-          amount: '₹45,200',
-          leads: 4,
-          status: 'Paid',
-          date: '10 May 2026',
-          bank: 'HDFC Bank ****4521',
-        },
-        {
-          id: 'P002',
-          month: 'June 2026',
-          amount: '₹12,800',
-          leads: 1,
-          status: 'Pending',
-          date: '05 Jun 2026',
-          bank: 'HDFC Bank ****4521',
-        },
-      ];
+      console.warn('PayoutAPI: Salesforce query failed, returning empty payouts:', e);
+      return [];
     }
   },
 };
@@ -600,22 +593,8 @@ export const PartnerAPI = {
       if (!profile) throw new Error('Connector record not found');
       return profile;
     } catch (e) {
-      console.warn('PartnerAPI: Salesforce profile fetch failed, returning mock profile:', e);
-      return {
-        id: 'mock-connector-001',
-        connectorId: 'DSA-08421',
-        fullName: 'Rajesh Kumar',
-        mobile: mobile || '9876543210',
-        email: 'rajesh@example.com',
-        pan: 'ABCDE1234F',
-        occupation: 'Financial Advisor',
-        bank: 'HDFC Bank',
-        bankAccount: '****4521',
-        ifsc: 'HDFC0000001',
-        residentialAddress: 'Mumbai, Maharashtra',
-        leadStatus: 'Active',
-        status: 'Active',
-      };
+      console.error('PartnerAPI: Salesforce profile fetch failed:', e);
+      throw e;
     }
   },
 };
@@ -733,20 +712,8 @@ export const ConnectorAPI = {
         connector: json.connector || null,
       };
     } catch (e) {
-      console.warn('ConnectorAPI.verifyOtp failed — using mock credentials:', e);
-      return {
-        token: 'mock-sf-token',
-        isNewConnector: false,
-        connector: {
-          id: 'mock-connector-001',
-          connectorId: 'DSAP12345',
-          fullName: 'Test Connector',
-          mobile,
-          email: 'test@example.com',
-          status: 'Active',
-          leadStatus: 'Active',
-        },
-      };
+      console.error('ConnectorAPI.verifyOtp failed:', e);
+      throw e; // Propagate — do NOT silently log in with mock credentials in production
     }
   },
 
@@ -829,8 +796,8 @@ export const ConnectorAPI = {
 
       return { id: sfId, connectorId: conId };
     } catch (e) {
-      console.warn('ConnectorAPI.createConnector failed — returning mock:', e);
-      return { id: 'mock-connector-001', connectorId: 'DSAP12345' };
+      console.error('ConnectorAPI.createConnector failed:', e);
+      throw e; // Propagate — do NOT create a ghost mock connector in production
     }
   },
 

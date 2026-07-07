@@ -85,7 +85,11 @@ export default function LoginScreen() {
                 <Text
                   style={styles.registerText}
                   onPress={() => {
-                    setPhoneNumber(phone || 'NewUser');
+                    if (phone.length !== 10) {
+                      alert('Please enter your 10-digit mobile number first to register.');
+                      return;
+                    }
+                    setPhoneNumber(phone);
                     router.push('/(auth)/partner-type' as any);
                   }}
                 >

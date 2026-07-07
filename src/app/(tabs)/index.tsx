@@ -9,7 +9,10 @@ export default function DashboardScreen() {
   const { 
     logout, 
     leads, 
-    onboardingData, 
+    payouts,
+    onboardingData,
+    connectorRecord,
+    dsaCode,
     notificationsEnabled, 
     setNotificationsEnabled,
     darkModeEnabled
@@ -109,11 +112,13 @@ export default function DashboardScreen() {
           <View style={[styles.hero, darkModeEnabled && styles.heroDark]}>
             <View style={styles.heroHeader}>
               <View>
-                <Text style={[styles.greeting, darkModeEnabled && styles.textDark]}>Good Evening, <Text style={styles.greetingHighlight}>{onboardingData.fullName || 'Rajesh'}!</Text></Text>
-                <Text style={[styles.greetingSub, darkModeEnabled && styles.textMutedDark]}>DSA Partner · Code: DSA-08421</Text>
+                <Text style={[styles.greeting, darkModeEnabled && styles.textDark]}>Good Evening, <Text style={styles.greetingHighlight}>{connectorRecord?.fullName || onboardingData.fullName || ''}!</Text></Text>
+                <Text style={[styles.greetingSub, darkModeEnabled && styles.textMutedDark]}>DSA Partner · Code: {dsaCode || connectorRecord?.connectorId || '—'}</Text>
               </View>
               <TouchableScale onPress={openBottomSheet} style={styles.avatar}>
-                <Text style={styles.avatarText}>RK</Text>
+                <Text style={styles.avatarText}>
+                  {(connectorRecord?.fullName || onboardingData.fullName || '?').split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase() || '?'}
+                </Text>
               </TouchableScale>
             </View>
 
@@ -157,11 +162,15 @@ export default function DashboardScreen() {
                 <Text style={[styles.statLabel, darkModeEnabled && styles.textMutedDark]}>Leads</Text>
               </TouchableScale>
               <TouchableScale style={[styles.statBox, { borderTopColor: '#10B981', borderTopWidth: 3 }, darkModeEnabled && styles.cardDark]} onPress={() => router.push('/(tabs)/payouts')}>
-                <Text style={[styles.statValue, { color: '#10B981' }]}>₹4.2Cr</Text>
+                <Text style={[styles.statValue, { color: '#10B981' }]}>
+                  ₹{payouts.filter(p => p.status === 'Paid').reduce((sum, p) => sum + (parseFloat(String(p.amount).replace(/[₹,]/g, '')) || 0), 0).toLocaleString('en-IN') || '0'}
+                </Text>
                 <Text style={[styles.statLabel, darkModeEnabled && styles.textMutedDark]}>Disbursed</Text>
               </TouchableScale>
               <TouchableScale style={[styles.statBox, { borderTopColor: '#F59E0B', borderTopWidth: 3 }, darkModeEnabled && styles.cardDark]} onPress={() => router.push('/(tabs)/payouts')}>
-                <Text style={[styles.statValue, { color: '#F59E0B' }]}>₹84K</Text>
+                <Text style={[styles.statValue, { color: '#F59E0B' }]}>
+                  ₹{payouts.reduce((sum, p) => sum + (parseFloat(String(p.amount).replace(/[₹,]/g, '')) || 0), 0).toLocaleString('en-IN') || '0'}
+                </Text>
                 <Text style={[styles.statLabel, darkModeEnabled && styles.textMutedDark]}>Earned</Text>
               </TouchableScale>
             </View>
@@ -315,24 +324,24 @@ export default function DashboardScreen() {
                   <MaterialCommunityIcons name="shield-check" size={28} color="#FFFFFF" />
                   <Text style={styles.partnerCardTitle}>INDIA SHELTER PARTNER</Text>
                 </View>
-                <Text style={styles.partnerName}>{onboardingData.fullName || 'Rajesh Kumar'}</Text>
+                <Text style={styles.partnerName}>{connectorRecord?.fullName || onboardingData.fullName || ''}</Text>
                 <View style={styles.partnerCardRow}>
                   <View>
                     <Text style={styles.partnerCardLabel}>PARTNER CODE</Text>
-                    <Text style={styles.partnerCardValue}>DSA-08421</Text>
+                    <Text style={styles.partnerCardValue}>{dsaCode || connectorRecord?.connectorId || '—'}</Text>
                   </View>
                   <View>
-                    <Text style={styles.partnerCardLabel}>EMPANELED SINCE</Text>
-                    <Text style={styles.partnerCardValue}>12 Jan 2026</Text>
+                    <Text style={styles.partnerCardLabel}>STATUS</Text>
+                    <Text style={styles.partnerCardValue}>{connectorRecord?.leadStatus || 'Onboarding'}</Text>
                   </View>
                 </View>
                 <View style={[styles.partnerCardRow, { marginTop: 12 }]}>
                   <View>
-                    <Text style={styles.partnerCardLabel}>ACTIVE REGION</Text>
-                    <Text style={styles.partnerCardValue}>Mumbai (West) Branch</Text>
+                    <Text style={styles.partnerCardLabel}>CONNECTOR TYPE</Text>
+                    <Text style={styles.partnerCardValue}>{connectorRecord?.connectorType || 'DSA'}</Text>
                   </View>
                   <View style={styles.partnerCardBadge}>
-                    <Text style={styles.partnerCardBadgeText}>ACTIVE DSA</Text>
+                    <Text style={styles.partnerCardBadgeText}>{connectorRecord?.status?.toUpperCase() || 'ACTIVE DSA'}</Text>
                   </View>
                 </View>
               </View>
@@ -353,14 +362,26 @@ export default function DashboardScreen() {
                 <TouchableOpacity 
                   style={[styles.rmContactBtn, { width: '100%' }]} 
                   onPress={() => {
-                    Linking.openURL('tel:1234567890').catch(() => {
-                      Alert.alert('Calling Support', 'Dialing 1234567890...');
+                    Linking.openURL('tel:18005728888').catch(() => {
+                      Alert.alert('Calling Support', 'India Shelter Helpline: 1800-572-8888');
                     });
                   }}
                   id="call-rm-support"
                 >
                   <MaterialCommunityIcons name="phone" size={18} color="#DE1F26" style={{ marginRight: 6 }} />
-                  <Text style={styles.rmContactBtnText}>Call Support (1234567890)</Text>
+                  <Text style={styles.rmContactBtnText}>Call: 1800-572-8888 (Toll Free)</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.rmContactBtn, { width: '100%', marginTop: 8 }]} 
+                  onPress={() => {
+                    Linking.openURL('mailto:customer.care@indiashelter.in').catch(() => {
+                      Alert.alert('Email Support', 'customer.care@indiashelter.in');
+                    });
+                  }}
+                  id="email-rm-support"
+                >
+                  <MaterialCommunityIcons name="email-outline" size={18} color="#DE1F26" style={{ marginRight: 6 }} />
+                  <Text style={styles.rmContactBtnText}>customer.care@indiashelter.in</Text>
                 </TouchableOpacity>
               </View>
 
