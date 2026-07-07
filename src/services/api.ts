@@ -209,7 +209,7 @@ export const LeadAPI = {
          Property_City__c, Current_Step__c, Application_Status__c, Connector__c
          FROM Lead ORDER BY CreatedDate DESC`
       );
-      const res = await fetch(`/services/data/v59.0/query?q=${query}`, {
+      const res = await fetch(`${getInstanceUrl()}/services/data/v59.0/query?q=${query}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -269,7 +269,7 @@ export const LeadAPI = {
 
   getLeadById: async (id: string): Promise<any> => {
     const token = await getSalesforceToken();
-    const res = await fetch(`/services/apexrest/v1/leads/${id}`, {
+    const res = await fetch(`${getInstanceUrl()}/services/apexrest/v1/leads/${id}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -369,7 +369,7 @@ export const LeadAPI = {
     // Link to Connector__c if provided
     if (data.connectorId) payload.Connector__c = data.connectorId;
 
-    const res = await fetch(`/services/data/v59.0/sobjects/Lead`, {
+    const res = await fetch(`${getInstanceUrl()}/services/data/v59.0/sobjects/Lead`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -387,7 +387,7 @@ export const LeadAPI = {
       if (mobileBlocked && payload.MobilePhone) {
         console.warn('MobilePhone field access denied — retrying without it');
         delete payload.MobilePhone;
-        const retry = await fetch(`/services/data/v59.0/sobjects/Lead`, {
+        const retry = await fetch(`${getInstanceUrl()}/services/data/v59.0/sobjects/Lead`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -456,7 +456,7 @@ export const LeadAPI = {
     status?: string;
   }): Promise<void> => {
     const token = await getSalesforceToken();
-    const res = await fetch(`/services/apexrest/v1/leads/${leadId}`, {
+    const res = await fetch(`${getInstanceUrl()}/services/apexrest/v1/leads/${leadId}`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -662,7 +662,7 @@ export const ConnectorAPI = {
   requestOtp: async (mobile: string): Promise<void> => {
     try {
       const token = await getSalesforceToken();
-      const res = await fetch(`/services/apexrest/v1/connector/otp/request`, {
+      const res = await fetch(`${getInstanceUrl()}/services/apexrest/v1/connector/otp/request`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -691,7 +691,7 @@ export const ConnectorAPI = {
   }> => {
     try {
       const sfToken = await getSalesforceToken();
-      const res = await fetch(`/services/apexrest/v1/connector/otp/verify`, {
+      const res = await fetch(`${getInstanceUrl()}/services/apexrest/v1/connector/otp/verify`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${sfToken}`,
@@ -745,7 +745,7 @@ export const ConnectorAPI = {
         NotificationEnable: data.notificationEnable ?? false,
       };
 
-      const res = await fetch(`/services/apexrest/v1/connector/signup`, {
+      const res = await fetch(`${getInstanceUrl()}/services/apexrest/v1/connector/signup`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -787,7 +787,7 @@ export const ConnectorAPI = {
         `FROM Connector__c WHERE Mobile__c = '${mobile}' LIMIT 1`
       );
 
-      const res = await fetch(`/services/data/v59.0/query?q=${query}`, {
+      const res = await fetch(`${getInstanceUrl()}/services/data/v59.0/query?q=${query}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -876,7 +876,7 @@ export const ConnectorAPI = {
         AlternativeMobile:      data.alternateMobile,
       };
 
-      const res = await fetch(`/services/apexrest/v1/connector/signup`, {
+      const res = await fetch(`${getInstanceUrl()}/services/apexrest/v1/connector/signup`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
