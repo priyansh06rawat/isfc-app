@@ -215,9 +215,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const partnerData = await getPartnerData();
           if (partnerData) {
             const p = partnerData as any;
+            
+            // Restore Salesforce ID and DSA Code so Lead creation and fetches work
+            if (p.id) setConnectorSfId(p.id);
+            if (p.connectorId) setDsaCode(p.connectorId);
+            setConnectorRecord(p as ConnectorRecord);
+            
             setOnboardingData((prev) => ({
               ...prev,
-              fullName: p.name || '',
+              fullName: p.name || p.fullName || '',
               email: p.email || '',
               city: p.city || '',
               pan: p.pan || '',
