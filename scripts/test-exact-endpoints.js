@@ -62,8 +62,8 @@ async function main() {
   const tests = [
     // App currently calls these:
     { label: 'APP: POST /v1/connector/otp/request (ConnectorRestController)', method: 'POST', url: SF_INSTANCE_URL + '/services/apexrest/v1/connector/otp/request', body: JSON.stringify({ mobile: '9999999998' }) },
-    { label: 'APP: POST /v1/connector/signup (ConnectorRestController)', method: 'POST', url: SF_INSTANCE_URL + '/services/apexrest/v1/connector/signup', body: JSON.stringify({ Process: 'softsignup', Name: 'Test User', Mobile: '9999999998', Email: 'test@test.com' }) },
-    { label: 'APP: POST /v1/leads (LeadRestService)', method: 'POST', url: SF_INSTANCE_URL + '/services/apexrest/v1/leads', body: JSON.stringify({ firstName: 'Test', lastName: 'Lead', mobileNumber: '9999999997', loanAmount: 500000, employmentType: 'Salaried', propertyType: 'Apartment', leadSource: 'Mobile App', status: 'Open - Not Contacted', currentStep: 'Personal Info', applicationStatus: 'Draft' }) },
+    { label: 'APP: POST /v1/connector/signup (ConnectorRestController)', method: 'POST', url: SF_INSTANCE_URL + '/services/apexrest/v1/connector/signup', body: JSON.stringify({ Process: 'softsignup', Name: 'Test User', Mobile: '9999999998', Email: 'demotest99@gmail.com', DeviceID: 'test-device-001', NotificationId: '', NotificationEnable: false }) },
+    { label: 'APP: POST /v1/leads (LeadRestService)', method: 'POST', url: SF_INSTANCE_URL + '/services/apexrest/v1/leads', body: JSON.stringify({ firstName: 'Test', lastName: 'Lead', mobileNumber: '9999999997', loanAmount: 500000, employmentType: 'Salaried', propertyType: 'Home Purchase', leadSource: 'Online Business Partner', status: 'New', currentStep: 'Personal Info', applicationStatus: 'Draft' }) },
     // Old API endpoints (ConnectorRegistrationAPI):
     { label: 'OLD: GET /Connector/Signup/ (ConnectorRegistrationAPI)', method: 'GET', url: SF_INSTANCE_URL + '/services/apexrest/Connector/Signup/' },
   ];

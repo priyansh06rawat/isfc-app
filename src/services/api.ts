@@ -169,6 +169,31 @@ export const AuthAPI = {
 };
 
 // ─── Lead API (Direct Salesforce Connection) ──────────────────────────────────
+
+/**
+ * Maps app-facing product names to valid Property_Type__c picklist values on Partial Sandbox.
+ * Valid values: "Home Purchase", "Home Construction", "Residential House",
+ *   "Ready Built Flat", "Commercial Building", "Commercial Shop/Unit",
+ *   "Plot + Construction", "Under Construction Property", "Owned Plot"
+ */
+function mapProductToPropertyType(product?: string): string {
+  const map: Record<string, string> = {
+    'Home Loan':         'Home Purchase',
+    'Home Purchase':     'Home Purchase',
+    'Home Construction': 'Home Construction',
+    'LAP':               'Residential House',
+    'Lap':               'Residential House',
+    'MSME Loan':         'Commercial Building',
+    'Commercial':        'Commercial Building',
+    'Plot':              'Owned Plot',
+    'Under Construction':'Under Construction Property',
+    'Apartment':         'Ready Built Flat',
+    'Flat':              'Ready Built Flat',
+  };
+  if (!product) return 'Home Purchase';
+  return map[product] || map[product.trim()] || 'Home Purchase';
+}
+
 export const LeadAPI = {
   /** Fetch all leads for the logged-in partner (via SOQL query) */
   getLeads: async (): Promise<any[]> => {
@@ -322,21 +347,32 @@ export const LeadAPI = {
       pincode:           data.pincode || data.propertyPincode || '',
       employmentType:    data.employment || 'Salaried',
       annualIncome:      data.income ? parseFloat(data.income) : 600000,
-      loanAmount:        data.amount || 1000000,
-      propertyValue:     data.propertyValue || (data.amount || 1000000) * 1.3,
-      propertyType:      data.product || 'Apartment',
-      loanTenure:        data.tenure ? parseInt(data.tenure) : 15,
-      propertyCity:      data.propertyCity || data.location || '',
-      propertyPincode:   data.propertyPincode || data.pincode || '',
-      currentStep:       data.currentStep || 'Personal Info',
-      applicationStatus: data.applicationStatus || 'Draft',
-      remarks:           data.remarks || '',
-      connectorId:       data.connectorId || '',
-      leadSource:        'Mobile App',
-      status:            'Open - Not Contacted',
+    const payload: Record<string, any> = {
+      FirstName:          firstName,
+      LastName:           lastName,
+      Company:            `${firstName} ${lastName}`,
+      Email:              data.email || '',
+      City:               data.location || data.propertyCity || '',
+      State:              data.state || '',
+      PostalCode:         data.pincode || data.propertyPincode || '',
+      LeadSource:         'Online Business Partner', // valid picklist value in Partial Sandbox
+      Status:             'New',                     // valid picklist value in Partial Sandbox
+      Description:        data.remarks || '',
+      // Custom fields
+      Loan_Amount__c:     data.amount || 1000000,
+      Employment_Type__c: data.employment || 'Salaried',
+      Property_City__c:   data.propertyCity || data.location || '',
+      Current_Step__c:    data.currentStep || 'Personal Info',
+      Application_Status__c: data.applicationStatus || 'Draft',
     };
 
-    const res = await fetch(`${SF_INSTANCE_URL}/services/apexrest/v1/leads`, {
+    // Add MobilePhone only (the Integration User profile may not have access — caught below)
+    if (data.mobile) payload.MobilePhone = data.mobile;
+
+    // Link to Connector__c if provided
+    if (data.connectorId) payload.Connector__c = data.connectorId;
+
+    const res = await fetch(`${SF_INSTANCE_URL}/services/data/v59.0/sobjects/Lead`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -346,18 +382,45 @@ export const LeadAPI = {
     });
 
     if (!res.ok) {
-      const errText = await res.text();
-      let errMsg = 'Failed to create lead';
-      try { const errJson = JSON.parse(errText); errMsg = errJson.message || errMsg; } catch (e) {}
-      throw new Error(errMsg);
+      const errArr = await res.json().catch(() => []);
+      // If MobilePhone blocked by FLS, retry without it
+      const mobileBlocked = Array.isArray(errArr) && errArr.some((e: any) =>
+        e.fields?.includes('MobilePhone') || (e.message || '').toLowerCase().includes('mobilephone')
+      );
+      if (mobileBlocked && payload.MobilePhone) {
+        console.warn('MobilePhone field access denied — retrying without it');
+        delete payload.MobilePhone;
+        const retry = await fetch(`${SF_INSTANCE_URL}/services/data/v59.0/sobjects/Lead`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!retry.ok) {
+          const retryErr = await retry.json().catch(() => []);
+          throw new Error(Array.isArray(retryErr) ? retryErr[0]?.message : 'Failed to create lead');
+        }
+        const retryData = await retry.json();
+        const leadId = retryData.id;
+        const randomColors = ['#DE1F26', '#2E7D32', '#EF6C00', '#FBC02D', '#1565C0', '#6A1B9A'];
+        return {
+          id: leadId, name: data.name, product: data.product,
+          amount: data.amount.toLocaleString('en-IN'), status: 'Pending',
+          color: randomColors[Math.floor(Math.random() * randomColors.length)],
+          city: data.location || data.propertyCity || 'Unknown',
+          date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+          mobile: data.mobile, email: data.email,
+          currentStep: data.currentStep || 'Personal Info',
+          applicationStatus: data.applicationStatus || 'Draft',
+        };
+      }
+      throw new Error(Array.isArray(errArr) ? errArr[0]?.message : 'Failed to create lead');
     }
 
     const json = await res.json();
-    if (!json.success) throw new Error(json.message || 'Lead creation failed');
-
+    const leadId = json.id;
     const randomColors = ['#DE1F26', '#2E7D32', '#EF6C00', '#FBC02D', '#1565C0', '#6A1B9A'];
     return {
-      id:     json.leadId,
+      id:     leadId,
       name:   data.name,
       product: data.product,
       amount:  data.amount.toLocaleString('en-IN'),
