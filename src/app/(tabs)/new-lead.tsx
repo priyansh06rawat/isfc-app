@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { TopNav } from '../../components/ui/TopNav';
+import * as DocumentPicker from 'expo-document-picker';
 
 const PRESETS = ['10L', '25L', '50L', '75L', '1Cr'];
 
@@ -100,8 +101,20 @@ export default function NewLeadScreen() {
     return `₹${num.toLocaleString('en-IN')}`;
   };
 
-  const handleUploadDocs = () => {
-    updateForm('isDocUploaded', true);
+  const handleUploadDocs = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*'],
+        copyToCacheDirectory: true,
+        multiple: true,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        updateForm('isDocUploaded', true);
+      }
+    } catch (e) {
+      console.warn('Document upload error:', e);
+      Alert.alert('Upload Failed', 'Could not pick documents.');
+    }
   };
 
   const handleSubmit = async () => {

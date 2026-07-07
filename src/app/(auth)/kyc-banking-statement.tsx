@@ -8,6 +8,7 @@ import { Input } from '../../components/ui/Input';
 import { TopNav } from '../../components/ui/TopNav';
 import { useAuth } from '../../context/AuthContext';
 import { sendStatusEmail } from '../../services/notifications';
+import * as DocumentPicker from 'expo-document-picker';
 
 export default function KycBankingStatementScreen() {
   const { onboardingData, updateOnboardingData } = useAuth();
@@ -30,14 +31,25 @@ export default function KycBankingStatementScreen() {
     Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, tension: 200, friction: 8 }).start();
   };
 
-  const handleUpload = () => {
-    updateOnboardingData({ bankingStatementUploaded: true });
-    if (onboardingData.email) {
-      sendStatusEmail({
-        to: onboardingData.email,
-        dsaName: onboardingData.fullName || 'Partner',
-        stage: `Banking Statement (${onboardingData.bankStatementMonths} Months) Uploaded`,
+  const handleUpload = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*'],
+        copyToCacheDirectory: true,
       });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        updateOnboardingData({ bankingStatementUploaded: true });
+        if (onboardingData.email) {
+          sendStatusEmail({
+            to: onboardingData.email,
+            dsaName: onboardingData.fullName || 'Partner',
+            stage: `Banking Statement (${onboardingData.bankStatementMonths} Months) Uploaded`,
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Document upload error:', e);
+      alert('Failed to pick document.');
     }
   };
 

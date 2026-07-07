@@ -1,15 +1,17 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text, Animated, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text, Animated, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { Button } from '../../components/ui/Button';
 import { TopNav } from '../../components/ui/TopNav';
 import { useAuth } from '../../context/AuthContext';
 
 export default function KycSelfieScreen() {
   const { onboardingData, updateOnboardingData } = useAuth();
-  const [isCapturing, setIsCapturing] = React.useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [selfieUri, setSelfieUri] = useState<string | null>(null);
 
   // Animation hooks
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -30,12 +32,31 @@ export default function KycSelfieScreen() {
     ]).start();
   }, []);
 
-  const handleCapture = () => {
+  const handleCapture = async () => {
     setIsCapturing(true);
-    setTimeout(() => {
+    try {
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permissionResult.granted) {
+        alert("Camera permission is required to capture a selfie.");
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setSelfieUri(result.assets[0].uri);
+        updateOnboardingData({ isSelfieCaptured: true });
+      }
+    } catch (e) {
+      console.warn('Error launching camera:', e);
+      alert('Failed to open camera.');
+    } finally {
       setIsCapturing(false);
-      updateOnboardingData({ isSelfieCaptured: true });
-    }, 1500);
+    }
   };
 
   const handleContinue = () => {
@@ -63,12 +84,16 @@ export default function KycSelfieScreen() {
             </View>
 
             <View style={styles.cameraFrame}>
-              <View style={[styles.cameraPlaceholder, onboardingData.isSelfieCaptured && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]}>
-                <MaterialCommunityIcons 
-                  name={onboardingData.isSelfieCaptured ? "account-check-outline" : "account-outline"} 
-                  size={64} 
-                  color={onboardingData.isSelfieCaptured ? "#10B981" : "#64748B"} 
-                />
+              <View style={[styles.cameraPlaceholder, onboardingData.isSelfieCaptured && { borderColor: '#10B981', backgroundColor: '#ECFDF5', overflow: 'hidden' }]}>
+                {selfieUri ? (
+                  <Image source={{ uri: selfieUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                ) : (
+                  <MaterialCommunityIcons 
+                    name={onboardingData.isSelfieCaptured ? "account-check-outline" : "account-outline"} 
+                    size={64} 
+                    color={onboardingData.isSelfieCaptured ? "#10B981" : "#64748B"} 
+                  />
+                )}
               </View>
               {onboardingData.isSelfieCaptured && (
                 <View style={styles.matchBadge}>
@@ -98,7 +123,6 @@ export default function KycSelfieScreen() {
               style={[styles.captureButton, onboardingData.isSelfieCaptured && styles.verifiedButton]}
               isLoading={isCapturing}
               onPress={handleCapture}
-              disabled={onboardingData.isSelfieCaptured}
             />
 
             <Button

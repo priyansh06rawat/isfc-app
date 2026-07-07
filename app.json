@@ -34,7 +34,20 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with us for your KYC verification.",
+          "cameraPermission": "The app accesses your camera to take a live selfie for your KYC verification."
+        }
+      ],
+      [
+        "expo-document-picker",
+        {
+          "appleTeamId": "YOUR_TEAM_ID"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

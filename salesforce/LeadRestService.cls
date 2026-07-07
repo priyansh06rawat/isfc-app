@@ -135,7 +135,7 @@ global with sharing class LeadRestService {
             lead.Description     = body.remarks;
 
             // Custom loan fields (using dynamic safePut to bypass compile-time type errors)
-            safePut(lead, 'Product__c', body.propertyType);
+            // Note: Product__c has no configured picklist values in Partial — skip it
             safePut(lead, 'Loan_Amount__c', body.loanAmount);
             safePut(lead, 'Property_Value__c', body.propertyValue);
             safePut(lead, 'Property_Type__c', body.propertyType);

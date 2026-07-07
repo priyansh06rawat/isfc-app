@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { TopNav } from '../../components/ui/TopNav';
 import { useAuth } from '../../context/AuthContext';
+import * as DocumentPicker from 'expo-document-picker';
 
 export default function KycAadhaarScreen() {
   const { onboardingData, updateOnboardingData } = useAuth();
@@ -42,12 +43,32 @@ export default function KycAadhaarScreen() {
     }, 1500);
   };
 
-  const handleUploadFront = () => {
-    updateOnboardingData({ aadhaarFrontUploaded: true });
+  const handleUploadFront = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*'],
+        copyToCacheDirectory: true,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        updateOnboardingData({ aadhaarFrontUploaded: true });
+      }
+    } catch (e) {
+      console.warn(e);
+    }
   };
 
-  const handleUploadBack = () => {
-    updateOnboardingData({ aadhaarBackUploaded: true });
+  const handleUploadBack = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*'],
+        copyToCacheDirectory: true,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        updateOnboardingData({ aadhaarBackUploaded: true });
+      }
+    } catch (e) {
+      console.warn(e);
+    }
   };
 
   const handleContinue = () => {

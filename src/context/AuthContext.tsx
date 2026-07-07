@@ -217,8 +217,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           setIsAuthenticated(true);
           // Load data in background
-          fetchLeadsInBackground();
-          fetchPayoutsInBackground();
+          const pId = partnerData ? (partnerData as any).id : undefined;
+          fetchLeadsInBackground(pId);
+          fetchPayoutsInBackground(pId);
         }
       } catch (e) {
         console.warn('Session restore failed:', e);
@@ -229,9 +230,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     restoreSession();
   }, []);
 
-  const fetchLeadsInBackground = async () => {
+  const fetchLeadsInBackground = async (sfId?: string) => {
     try {
-      const data = await LeadAPI.getLeads();
+      const data = await LeadAPI.getLeads(sfId);
       setLeads(data);
     } catch (e) {
       console.warn('Failed to fetch leads:', e);
@@ -250,7 +251,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchLeads = async () => {
     setIsApiLoading(true);
     try {
-      const data = await LeadAPI.getLeads();
+      const data = await LeadAPI.getLeads(connectorSfId || undefined);
       setLeads(data);
     } catch (e) {
       console.warn('fetchLeads error:', e);
@@ -305,7 +306,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }));
         if (c.connectorId) setDsaCode(c.connectorId);
         setIsAuthenticated(true);
-        fetchLeadsInBackground();
+        fetchLeadsInBackground(c.id);
         fetchPayoutsInBackground(c.id);
       }
 
@@ -361,7 +362,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await savePartnerData(connectorPayload as object);
 
       setIsAuthenticated(true);
-      fetchLeadsInBackground();
+      fetchLeadsInBackground(result.id);
       fetchPayoutsInBackground(result.id);
     } finally {
       setIsApiLoading(false);
@@ -396,6 +397,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         product: newLead.product,
         amount: parseLoanAmount(newLead.amount),
         location: newLead.city,
+        connectorId: connectorSfId || undefined,
       });
       // Prepend to local state
       setLeads((prev) => [created, ...prev]);
