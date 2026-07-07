@@ -59,7 +59,7 @@ export default function KycPanScreen() {
         copyToCacheDirectory: true,
       });
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        updateOnboardingData({ panUploaded: true });
+        updateOnboardingData({ panUploaded: true, panUri: result.assets[0].uri });
       }
     } catch (e) {
       console.warn('Document upload error:', e);

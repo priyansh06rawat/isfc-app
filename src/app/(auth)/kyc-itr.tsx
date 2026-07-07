@@ -55,7 +55,7 @@ export default function KycItrScreen() {
         copyToCacheDirectory: true,
       });
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        updateOnboardingData({ itrUploaded: true });
+        updateOnboardingData({ itrUploaded: true, itrUri: result.assets[0].uri });
         if (onboardingData.email) {
           sendStatusEmail({
             to: onboardingData.email,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, Animated, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, FlatList, TextInput, TouchableOpacity, Platform, Animated, RefreshControl } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
@@ -10,9 +10,10 @@ const FILTERS = ['All', 'Processing', 'Approved', 'Pending', 'Disbursed', 'Rejec
 
 export default function LeadsScreen() {
   const insets = useSafeAreaInsets();
-  const { leads, fetchLeads, darkModeEnabled } = useAuth();
+  const { leads, fetchLeads, loadMoreLeads, darkModeEnabled } = useAuth();
   
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const spinValue = useRef(new Animated.Value(0)).current;
 
   const handleRefresh = async () => {
@@ -193,54 +194,60 @@ export default function LeadsScreen() {
 
         {/* Leads List with Fade Transition */}
         <Animated.View style={{ flex: 1, opacity: listOpacity }}>
-          <ScrollView 
+          <FlatList
+            data={filteredLeads}
+            keyExtractor={(item) => item.id}
             contentContainerStyle={styles.scrollContent}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={['#DE1F26']} />
             }
-          >
-            {filteredLeads.length === 0 ? (
+            onEndReached={async () => {
+              if (!loadingMore && activeFilter === 'All') {
+                setLoadingMore(true);
+                await loadMoreLeads?.();
+                setLoadingMore(false);
+              }
+            }}
+            onEndReachedThreshold={0.5}
+            ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <MaterialCommunityIcons name="database-search-outline" size={48} color="#94A3B8" style={{ marginBottom: 12 }} />
                 <Text style={[styles.emptyTitle, darkModeEnabled && styles.textDark]}>No leads found</Text>
                 <Text style={[styles.emptySub, darkModeEnabled && styles.textMutedDark]}>Try a different search or filter option</Text>
               </View>
-            ) : (
-              filteredLeads.map((lead) => {
-                const status = getStatusStyle(lead.status);
-                const initials = lead.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+            }
+            renderItem={({ item: lead }) => {
+              const status = getStatusStyle(lead.status);
+              const initials = lead.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
 
-                return (
-                  <TouchableScale 
-                    key={lead.id} 
-                    style={[styles.leadCard, darkModeEnabled && styles.cardDark]}
-                    onPress={() => handleLeadPress(lead.id)}
-                  >
-                    {/* Status vertical stripe on the left edge */}
-                    <View style={[styles.statusStripe, { backgroundColor: status.color }]} />
+              return (
+                <TouchableScale 
+                  style={[styles.leadCard, darkModeEnabled && styles.cardDark]}
+                  onPress={() => handleLeadPress(lead.id)}
+                >
+                  <View style={[styles.statusStripe, { backgroundColor: status.color }]} />
 
-                    <View style={[styles.leadAvatar, { backgroundColor: lead.color || '#DE1F26' }]}>
-                      <Text style={styles.avatarText}>{initials}</Text>
+                  <View style={[styles.leadAvatar, { backgroundColor: lead.color || '#DE1F26' }]}>
+                    <Text style={styles.avatarText}>{initials}</Text>
+                  </View>
+                  <View style={styles.leadInfo}>
+                    <Text style={[styles.leadName, darkModeEnabled && styles.textDark]}>{lead.name}</Text>
+                    <Text style={[styles.leadDetail, darkModeEnabled && styles.textMutedDark]}>
+                      {lead.product} • {lead.id} • {lead.city}
+                    </Text>
+                    {lead.date && <Text style={[styles.leadDate, darkModeEnabled && styles.textMutedDark]}>{lead.date}</Text>}
+                  </View>
+                  <View style={styles.leadMeta}>
+                    <Text style={[styles.leadAmount, darkModeEnabled && styles.textDark]}>{lead.amount}</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
+                      <Text style={[styles.statusBadgeText, { color: status.color }]}>{lead.status}</Text>
                     </View>
-                    <View style={styles.leadInfo}>
-                      <Text style={[styles.leadName, darkModeEnabled && styles.textDark]}>{lead.name}</Text>
-                      <Text style={[styles.leadDetail, darkModeEnabled && styles.textMutedDark]}>
-                        {lead.product} • {lead.id} • {lead.city}
-                      </Text>
-                      {lead.date && <Text style={[styles.leadDate, darkModeEnabled && styles.textMutedDark]}>{lead.date}</Text>}
-                    </View>
-                    <View style={styles.leadMeta}>
-                      <Text style={[styles.leadAmount, darkModeEnabled && styles.textDark]}>{lead.amount}</Text>
-                      <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
-                        <Text style={[styles.statusBadgeText, { color: status.color }]}>{lead.status}</Text>
-                      </View>
-                    </View>
-                  </TouchableScale>
-                );
-              })
-            )}
-            <View style={{ height: 100 }} />
-          </ScrollView>
+                  </View>
+                </TouchableScale>
+              );
+            }}
+            ListFooterComponent={<View style={{ height: 100 }} />}
+          />
         </Animated.View>
 
         {/* Floating Action Button (FAB) wrapped in TouchableScale */}

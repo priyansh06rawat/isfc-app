@@ -1,6 +1,8 @@
 import { getToken, removeToken } from './storage';
 import Constants from 'expo-constants';
 
+import * as FileSystem from 'expo-file-system';
+
 // ─── Salesforce API Config ───────────────────────────────────────────────────
 // 3-layer fallback: EXPO_PUBLIC_ env var → app.config.js extra → hardcoded Sandbox default
 const extra = Constants.expoConfig?.extra || {};
@@ -200,7 +202,7 @@ function mapProductToPropertyType(product?: string): string {
 
 export const LeadAPI = {
   /** Fetch all leads for the logged-in partner (via SOQL query) */
-  getLeads: async (connectorId?: string): Promise<any[]> => {
+  getLeads: async (connectorId?: string, limit: number = 20, offset: number = 0): Promise<any[]> => {
     if (!connectorId) return [];
     
     try {
@@ -210,7 +212,7 @@ export const LeadAPI = {
         `SELECT Id, FirstName, LastName, MobilePhone, Email, Status, City, State, PostalCode, CreatedDate,
          Loan_Amount__c, Property_Type__c, Employment_Type__c, Tenure__c,
          Property_City__c, Current_Step__c, Application_Status__c, Connector__c
-         FROM Lead ${whereClause} ORDER BY CreatedDate DESC`
+         FROM Lead ${whereClause} ORDER BY CreatedDate DESC LIMIT ${limit} OFFSET ${offset}`
       );
       const res = await fetch(`${getInstanceUrl()}/services/data/v59.0/query?q=${query}`, {
         headers: {
@@ -244,6 +246,42 @@ export const LeadAPI = {
     } catch (e) {
       console.warn('Direct Salesforce getLeads failed:', e);
       throw e;
+    }
+  },
+
+  /** Uploads a document to Salesforce as ContentVersion */
+  uploadDocument: async (uri: string, fileName: string, recordId: string): Promise<boolean> => {
+    try {
+      const token = await getSalesforceToken();
+      // Read file as base64
+      const base64Data = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      const payload = {
+        Title: fileName,
+        PathOnClient: fileName,
+        VersionData: base64Data,
+        FirstPublishLocationId: recordId,
+      };
+
+      const res = await fetch(`${getInstanceUrl()}/services/data/v59.0/sobjects/ContentVersion`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        console.warn(`Failed to upload document ${fileName}: ${res.status}`);
+        return false;
+      }
+      return true;
+    } catch (e) {
+      console.warn(`Exception uploading document ${fileName}:`, e);
+      return false;
     }
   },
 

@@ -2,7 +2,9 @@ import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import { ErrorFallback } from '../components/ErrorBoundary';
 
 function RootLayoutNav() {
   const { isLoading, isAuthenticated } = useAuth();
@@ -38,9 +40,11 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <StatusBar style="dark" />
-      <RootLayoutNav />
-    </AuthProvider>
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <AuthProvider>
+        <RootLayoutNav />
+        <StatusBar style="auto" />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

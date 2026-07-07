@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ConnectorAPI, ConnectorRecord, LeadAPI, PayoutAPI } from '../services/api';
 import { saveToken, getToken, removeToken, savePartnerData, getPartnerData, clearPartnerData } from '../services/storage';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 export interface Lead {
   id: string;
@@ -86,6 +87,12 @@ export interface OnboardingData {
   enrollmentDsaCode: string;
   enrollmentLetterUploaded: boolean;
   enrollmentSkipped: boolean;
+  // URIs for upload
+  panUri?: string;
+  selfieUri?: string;
+  businessDocUri?: string;
+  enrollmentLetterUri?: string;
+  itrUri?: string;
 }
 
 const DEFAULT_ONBOARDING: OnboardingData = {
@@ -157,8 +164,9 @@ interface AuthContextType {
   connectorRecord: ConnectorRecord | null;
   // Leads
   leads: Lead[];
-  addLead: (lead: Omit<Lead, 'id' | 'color' | 'date'>) => Promise<void>;
+  addLead: (lead: Omit<Lead, 'id' | 'color' | 'date'> & { docUri?: string }) => Promise<void>;
   fetchLeads: () => Promise<void>;
+  loadMoreLeads: () => Promise<void>;
   // Payouts
   payouts: Payout[];
   fetchPayouts: () => Promise<void>;
@@ -215,6 +223,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               pan: p.pan || '',
             }));
           }
+
+          // Request biometric authentication if available
+          const hasHardware = await LocalAuthentication.hasHardwareAsync();
+          const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+          
+          if (hasHardware && isEnrolled) {
+            const biometricAuth = await LocalAuthentication.authenticateAsync({
+              promptMessage: 'Login to India Shelter Partner',
+              fallbackLabel: 'Use Passcode',
+            });
+            if (!biometricAuth.success) {
+              setIsLoading(false);
+              return;
+            }
+          }
+
           setIsAuthenticated(true);
           // Load data in background
           const pId = partnerData ? (partnerData as any).id : undefined;
@@ -232,10 +256,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchLeadsInBackground = async (sfId?: string) => {
     try {
-      const data = await LeadAPI.getLeads(sfId);
+      const data = await LeadAPI.getLeads(sfId, 20, 0);
       setLeads(data);
     } catch (e) {
       console.warn('Failed to fetch leads:', e);
+    }
+  };
+
+  const loadMoreLeads = async () => {
+    if (isApiLoading || !connectorSfId) return;
+    setIsApiLoading(true);
+    try {
+      const data = await LeadAPI.getLeads(connectorSfId, 20, leads.length);
+      if (data.length > 0) {
+        setLeads((prev) => [...prev, ...data]);
+      }
+    } catch (e) {
+      console.warn('Failed to load more leads:', e);
+    } finally {
+      setIsApiLoading(false);
     }
   };
 
@@ -361,6 +400,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Save connector profile locally
       await savePartnerData(connectorPayload as object);
 
+      // Upload Documents in background
+      const uploadPromises = [];
+      if (onboardingData.selfieUri) uploadPromises.push(LeadAPI.uploadDocument(onboardingData.selfieUri, 'Selfie.jpg', result.id));
+      if (onboardingData.panUri) uploadPromises.push(LeadAPI.uploadDocument(onboardingData.panUri, 'PAN_Card', result.id));
+      if (onboardingData.businessDocUri) uploadPromises.push(LeadAPI.uploadDocument(onboardingData.businessDocUri, 'Business_Proof', result.id));
+      if (onboardingData.enrollmentLetterUri) uploadPromises.push(LeadAPI.uploadDocument(onboardingData.enrollmentLetterUri, 'Enrollment_Letter', result.id));
+      if (onboardingData.itrUri) uploadPromises.push(LeadAPI.uploadDocument(onboardingData.itrUri, 'ITR_Document', result.id));
+
+      Promise.all(uploadPromises).catch(e => console.warn('Background document upload failed:', e));
+
       setIsAuthenticated(true);
       fetchLeadsInBackground(result.id);
       fetchPayoutsInBackground(result.id);
@@ -387,7 +436,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setOnboardingData((prev) => ({ ...prev, ...data }));
   };
 
-  const addLead = async (newLead: Omit<Lead, 'id' | 'color' | 'date'>) => {
+  const addLead = async (newLead: Omit<Lead, 'id' | 'color' | 'date'> & { docUri?: string }) => {
     setIsApiLoading(true);
     try {
       const created = await LeadAPI.createLead({
@@ -399,6 +448,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         location: newLead.city,
         connectorId: connectorSfId || undefined,
       });
+      
+      // Upload document if provided
+      if (newLead.docUri) {
+        LeadAPI.uploadDocument(newLead.docUri, 'Lead_Document', created.id).catch(e => console.warn('Lead doc upload failed:', e));
+      }
+      
       // Prepend to local state
       setLeads((prev) => [created, ...prev]);
     } catch (e) {
@@ -422,7 +477,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         connectorRecord,
         leads,
         addLead,
-        fetchLeads,
+        fetchLeads: () => fetchLeadsInBackground(connectorSfId || undefined),
+        loadMoreLeads,
         payouts,
         fetchPayouts,
         onboardingData,

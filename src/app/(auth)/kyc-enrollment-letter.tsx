@@ -39,7 +39,7 @@ export default function KycEnrollmentLetterScreen() {
         copyToCacheDirectory: true,
       });
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        updateOnboardingData({ enrollmentLetterUploaded: true, enrollmentSkipped: false });
+        updateOnboardingData({ enrollmentLetterUploaded: true, enrollmentSkipped: false, enrollmentLetterUri: result.assets[0].uri });
         if (onboardingData.email) {
           sendStatusEmail({
             to: onboardingData.email,

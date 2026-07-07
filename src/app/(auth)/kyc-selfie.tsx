@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { Button } from '../../components/ui/Button';
 import { TopNav } from '../../components/ui/TopNav';
 import { useAuth } from '../../context/AuthContext';
@@ -48,7 +49,15 @@ export default function KycSelfieScreen() {
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setSelfieUri(result.assets[0].uri);
+        const uri = result.assets[0].uri;
+        // Compress image to save bandwidth and Salesforce storage
+        const manipResult = await ImageManipulator.manipulateAsync(
+          uri,
+          [{ resize: { width: 800 } }],
+          { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+        );
+        
+        setSelfieUri(manipResult.uri);
         updateOnboardingData({ isSelfieCaptured: true });
       }
     } catch (e) {

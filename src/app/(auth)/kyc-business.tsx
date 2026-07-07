@@ -51,7 +51,7 @@ export default function KycBusinessScreen() {
         copyToCacheDirectory: true,
       });
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        updateOnboardingData({ businessDocUploaded: true });
+        updateOnboardingData({ businessDocUploaded: true, businessDocUri: result.assets[0].uri });
       }
     } catch (e) {
       console.warn('Document upload error:', e);

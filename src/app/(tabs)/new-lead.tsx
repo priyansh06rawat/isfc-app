@@ -35,6 +35,7 @@ export default function NewLeadScreen() {
     income: '',
     cibil: '750+ (Excellent)',
     isDocUploaded: false,
+    docUri: '',
   });
 
   // Dropdown Picker Modal states
@@ -101,19 +102,19 @@ export default function NewLeadScreen() {
     return `₹${num.toLocaleString('en-IN')}`;
   };
 
-  const handleUploadDocs = async () => {
+  const handleUpload = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: ['application/pdf', 'image/*'],
         copyToCacheDirectory: true,
-        multiple: true,
       });
       if (!result.canceled && result.assets && result.assets.length > 0) {
         updateForm('isDocUploaded', true);
+        updateForm('docUri', result.assets[0].uri);
       }
     } catch (e) {
       console.warn('Document upload error:', e);
-      Alert.alert('Upload Failed', 'Could not pick documents.');
+      Alert.alert('Upload Failed', 'Could not pick document.');
     }
   };
 
@@ -129,14 +130,14 @@ export default function NewLeadScreen() {
 
     await addLead({
       name: form.name,
-      product: form.product,
-      amount: formatAmount(form.amount),
-      status: 'Processing',
-      city: form.location || 'Mumbai',
       mobile: form.mobile,
       employment: form.employment,
-      cibil: form.cibil,
-    });
+      product: form.product,
+      amount: form.amount.replace(/,/g, ''),
+      city: form.location,
+      status: 'Processing',
+      docUri: form.docUri,
+    } as any);
 
     Alert.alert('Lead Created', 'Lead has been successfully submitted and listed.', [
       { text: 'OK', onPress: () => router.replace('/(tabs)/leads' as any) }
@@ -379,7 +380,7 @@ export default function NewLeadScreen() {
                 form.isDocUploaded && { borderColor: '#10B981', backgroundColor: '#ECFDF5' },
                 darkModeEnabled && !form.isDocUploaded && styles.cardDark
               ]} 
-              onPress={handleUploadDocs}
+              onPress={handleUpload}
             >
               {form.isDocUploaded ? (
                 <>
