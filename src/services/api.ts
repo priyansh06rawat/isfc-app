@@ -1,10 +1,10 @@
 import { getToken, removeToken } from './storage';
 
 // ─── Salesforce API Config ───────────────────────────────────────────────────
-export const SF_LOGIN_URL = process.env.EXPO_PUBLIC_SF_LOGIN_URL || 'https://login.salesforce.com';
-export const SF_INSTANCE_URL = process.env.EXPO_PUBLIC_SF_INSTANCE_URL || 'https://orgfarm-6ebfdf48c8-dev-ed.develop.my.salesforce.com';
-export const SF_CLIENT_ID = process.env.EXPO_PUBLIC_SF_CLIENT_ID || 'YOUR_CONSUMER_KEY';
-export const SF_CLIENT_SECRET = process.env.EXPO_PUBLIC_SF_CLIENT_SECRET || 'YOUR_CONSUMER_SECRET';
+export const SF_LOGIN_URL = process.env.EXPO_PUBLIC_SF_LOGIN_URL || '';
+export const SF_INSTANCE_URL = process.env.EXPO_PUBLIC_SF_INSTANCE_URL || '';
+export const SF_CLIENT_ID = process.env.EXPO_PUBLIC_SF_CLIENT_ID || '';
+export const SF_CLIENT_SECRET = process.env.EXPO_PUBLIC_SF_CLIENT_SECRET || '';
 export const SF_USERNAME = process.env.EXPO_PUBLIC_SF_USERNAME || '';
 export const SF_PASSWORD = process.env.EXPO_PUBLIC_SF_PASSWORD || '';
 
