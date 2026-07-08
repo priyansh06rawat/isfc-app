@@ -12,7 +12,7 @@ import * as DocumentPicker from 'expo-document-picker';
 const PRESETS = ['10L', '25L', '50L', '75L', '1Cr'];
 
 const EMPLOYMENT_OPTIONS = ['Salaried', 'Self-Employed', 'Business Owner', 'Financial Advisor'];
-const PRODUCT_OPTIONS = ['Home Loan', 'LAP', 'MSME Loan', 'Business Loan'];
+const PRODUCT_OPTIONS = ['Home Loan', 'LAP'];
 const CIBIL_OPTIONS = ['750+ (Excellent)', '700-749 (Good)', '650-699 (Fair)', 'Below 650 (Poor)'];
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -31,6 +31,7 @@ export default function NewLeadScreen() {
     product: 'Home Loan',
     amount: '2500000', // Default 25L
     tenure: '180 months',
+    pincode: '',
     location: '',
     income: '',
     cibil: '750+ (Excellent)',
@@ -42,7 +43,23 @@ export default function NewLeadScreen() {
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerTitle, setPickerTitle] = useState('');
   const [pickerOptions, setPickerOptions] = useState<string[]>([]);
-  const [pickerField, setPickerField] = useState<'employment' | 'product' | 'cibil' | null>(null);
+  const [pickerField, setPickerField] = useState<'employment' | 'product' | 'cibil' | 'calendarYear' | 'calendarMonth' | null>(null);
+
+  const handlePincodeChange = async (text: string) => {
+    updateForm('pincode', text);
+    if (text.length === 6) {
+      try {
+        const response = await fetch(`https://api.postalpincode.in/pincode/${text}`);
+        const data = await response.json();
+        if (data && data[0] && data[0].Status === 'Success') {
+          const postOffice = data[0].PostOffice[0];
+          updateForm('location', `${postOffice.District}, ${postOffice.State}`);
+        }
+      } catch (error) {
+        console.warn('Failed to fetch pincode details', error);
+      }
+    }
+  };
 
   // Calendar Modal states
   const [calendarVisible, setCalendarVisible] = useState(false);
@@ -145,7 +162,7 @@ export default function NewLeadScreen() {
   };
 
   // Open Dropdown Modal helper
-  const openDropdown = (type: 'employment' | 'product' | 'cibil') => {
+  const openDropdown = (type: 'employment' | 'product' | 'cibil' | 'calendarYear' | 'calendarMonth') => {
     setPickerField(type);
     if (type === 'employment') {
       setPickerTitle('Select Employment Type');
@@ -153,15 +170,25 @@ export default function NewLeadScreen() {
     } else if (type === 'product') {
       setPickerTitle('Select Product Interest');
       setPickerOptions(PRODUCT_OPTIONS);
-    } else {
+    } else if (type === 'cibil') {
       setPickerTitle('Select Estimated CIBIL Score');
       setPickerOptions(CIBIL_OPTIONS);
+    } else if (type === 'calendarYear') {
+      setPickerTitle('Select Year');
+      setPickerOptions(YEARS.map(String));
+    } else if (type === 'calendarMonth') {
+      setPickerTitle('Select Month');
+      setPickerOptions(MONTHS);
     }
     setPickerVisible(true);
   };
 
   const handleOptionSelect = (option: string) => {
-    if (pickerField) {
+    if (pickerField === 'calendarYear') {
+      setCalendarYear(parseInt(option));
+    } else if (pickerField === 'calendarMonth') {
+      setCalendarMonth(MONTHS.indexOf(option));
+    } else if (pickerField) {
       updateForm(pickerField, option);
     }
     setPickerVisible(false);
@@ -343,6 +370,15 @@ export default function NewLeadScreen() {
             />
 
             <Input
+              label="Property Pincode"
+              placeholder="e.g. 110001"
+              value={form.pincode}
+              keyboardType="number-pad"
+              maxLength={6}
+              onChangeText={handlePincodeChange}
+            />
+
+            <Input
               label="Property Location (if known)"
               placeholder="City, State"
               value={form.location}
@@ -447,7 +483,9 @@ export default function NewLeadScreen() {
               >
                 <MaterialCommunityIcons name="chevron-left" size={24} color={darkModeEnabled ? '#F8FAFC' : '#0F172A'} />
               </TouchableOpacity>
-              <Text style={[styles.yearText, darkModeEnabled && styles.textDark]}>{calendarYear}</Text>
+              <TouchableOpacity onPress={() => openDropdown('calendarYear')}>
+                <Text style={[styles.yearText, darkModeEnabled && styles.textDark]}>{calendarYear} <MaterialCommunityIcons name="menu-down" size={20} color={darkModeEnabled ? '#F8FAFC' : '#0F172A'} /></Text>
+              </TouchableOpacity>
               <TouchableOpacity 
                 style={[styles.yearNavBtn, darkModeEnabled && { backgroundColor: '#334155' }]} 
                 onPress={() => setCalendarYear(prev => prev + 1)}
@@ -464,7 +502,9 @@ export default function NewLeadScreen() {
               >
                 <MaterialCommunityIcons name="chevron-left" size={20} color={darkModeEnabled ? '#F8FAFC' : '#0F172A'} />
               </TouchableOpacity>
-              <Text style={[styles.calendarMonthText, darkModeEnabled && styles.textDark]}>{MONTHS[calendarMonth]}</Text>
+              <TouchableOpacity onPress={() => openDropdown('calendarMonth')}>
+                <Text style={[styles.calendarMonthText, darkModeEnabled && styles.textDark]}>{MONTHS[calendarMonth]} <MaterialCommunityIcons name="menu-down" size={16} color={darkModeEnabled ? '#F8FAFC' : '#0F172A'} /></Text>
+              </TouchableOpacity>
               <TouchableOpacity 
                 style={[styles.yearNavBtn, darkModeEnabled && { backgroundColor: '#334155' }]} 
                 onPress={() => setCalendarMonth(prev => prev === 11 ? 0 : prev + 1)}
