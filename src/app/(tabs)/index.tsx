@@ -563,11 +563,13 @@ const styles = StyleSheet.create({
   statBox: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    paddingVertical: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.04,
@@ -607,6 +609,7 @@ const styles = StyleSheet.create({
   quickActionsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 16,
   },
   actionBtn: {
     alignItems: 'center',
