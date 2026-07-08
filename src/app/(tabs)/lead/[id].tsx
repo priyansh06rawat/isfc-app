@@ -7,8 +7,25 @@ import { useAuth } from '../../../context/AuthContext';
 import { TopNav } from '../../../components/ui/TopNav';
 import { sendWhatsAppMessage, buildLeadStatusMessage } from '../../../services/notifications';
 
-// Progress nodes pipeline
-const STEPS = ['Lead Created', 'Docs Verified', 'Underwriting', 'Sanctioned', 'Disbursed'];
+// Dynamic Pipeline Mapping
+const PHASE_MAP: Record<string, number> = {
+  'New': 0, 'Call Back': 0, 'Followup': 0, 'Not Contactable': 0,
+  'Enquiry': 1, 'Qualified': 1, 'Referred': 1, 'Post Referred': 1, 'Retained': 1, 'Retention Pending': 1,
+  'Enquiry Rejected': 1, 'Disqualified': 1, 'Not Retained': 1, 'Post Refer Reject': 1,
+  'KYC Done': 2,
+  'Login': 3,
+  'Sanction': 4, 'Approved': 4, 'Rejected': 4, 'Disbursed': 4
+};
+
+const BASE_STEPS = ['New', 'Enquiry', 'KYC Done', 'Login', 'Sanction'];
+const DESCRIPTIONS = [
+  'Lead created and contact initiated',
+  'Lead qualified and enquiry logged',
+  'Mandatory KYC and documents validated',
+  'Underwriting and file processing',
+  'Final sanction and approval'
+];
+const REJECTED_STATUSES = ['Rejected', 'Enquiry Rejected', 'Disqualified', 'Not Retained', 'Post Refer Reject'];
 
 export default function LeadDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -48,18 +65,15 @@ export default function LeadDetailsScreen() {
     );
   }
 
-  // Get active step index based on lead status
-  const getActiveStep = (status: string) => {
-    const s = status.toLowerCase();
-    if (s === 'rejected') return 0; // special case
-    if (s === 'pending') return 0;
-    if (s === 'processing') return 2; // Underwriting
-    if (s === 'approved' || s === 'sanctioned') return 3; // Sanctioned
-    if (s === 'disbursed') return 4; // Disbursed
-    return 1;
-  };
+  const isRejected = REJECTED_STATUSES.includes(lead.status);
+  let activePhaseIndex = PHASE_MAP[lead.status];
+  if (activePhaseIndex === undefined) activePhaseIndex = 0;
 
-  const activeStep = getActiveStep(lead.status);
+  // Build dynamic steps array
+  const dynamicSteps = BASE_STEPS.map((baseStep, idx) => ({
+    title: idx === activePhaseIndex ? lead.status : baseStep,
+    description: DESCRIPTIONS[idx]
+  }));
   const initials = lead.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
 
   const getBadgeColors = (status: string) => {
@@ -188,32 +202,35 @@ export default function LeadDetailsScreen() {
             <Text style={[styles.trackerTitle, darkModeEnabled && styles.textDark]}>Status Pipeline</Text>
             
             <View style={styles.pipeline}>
-              {STEPS.map((step, idx) => {
-                const isCompleted = idx <= activeStep;
-                const isCurrent = idx === activeStep;
-                const showLine = idx < STEPS.length - 1;
+              {dynamicSteps.map((step, idx) => {
+                const isCompleted = idx <= activePhaseIndex;
+                const isCurrent = idx === activePhaseIndex;
+                const showLine = idx < dynamicSteps.length - 1;
+                const isFailedNode = isRejected && isCurrent;
 
                 return (
-                  <View key={step} style={styles.stepRow}>
+                  <View key={`${step.title}-${idx}`} style={styles.stepRow}>
                     {/* Left node indicators */}
                     <View style={styles.nodeColumn}>
                       <View style={[
                         styles.circle,
                         darkModeEnabled && styles.circleDark,
-                        isCompleted && styles.circleCompleted
+                        isCompleted && !isFailedNode && styles.circleCompleted,
+                        isFailedNode && styles.circleFailed
                       ]}>
                         <Text style={[
                           styles.circleText,
-                          isCompleted && styles.circleTextCompleted
+                          isCompleted && !isFailedNode && styles.circleTextCompleted,
+                          isFailedNode && styles.circleTextFailed
                         ]}>
-                          {isCompleted ? '✓' : idx + 1}
+                          {isFailedNode ? '✗' : (isCompleted ? '✓' : idx + 1)}
                         </Text>
                       </View>
                       {showLine && (
                         <View style={[
                           styles.line,
                           darkModeEnabled && styles.lineDark,
-                          idx < activeStep && styles.lineCompleted
+                          idx < activePhaseIndex && !isFailedNode && styles.lineCompleted
                         ]} />
                       )}
                     </View>
@@ -223,17 +240,14 @@ export default function LeadDetailsScreen() {
                       <Text style={[
                         styles.stepLabel,
                         darkModeEnabled && styles.textMutedDark,
-                        isCompleted && styles.stepLabelCompleted,
-                        isCompleted && darkModeEnabled && styles.textDark
+                        isCompleted && !isFailedNode && styles.stepLabelCompleted,
+                        isCompleted && !isFailedNode && darkModeEnabled && styles.textDark,
+                        isFailedNode && styles.stepLabelFailed
                       ]}>
-                        {step}
+                        {step.title}
                       </Text>
                       <Text style={[styles.stepSub, darkModeEnabled && styles.textMutedDark]}>
-                        {idx === 0 && 'Lead created in sourcing platform'}
-                        {idx === 1 && (isCompleted ? 'All mandatory KYC/Income files validated' : 'Pending bank/KYC uploads')}
-                        {idx === 2 && (isCompleted ? 'Passed credit screening & automated rule checks' : 'Underwriting review pipeline')}
-                        {idx === 3 && (isCompleted ? 'Sanction letter generated and sent' : 'Generating formal approval letter')}
-                        {idx === 4 && (isCompleted ? 'Disbursement complete' : 'Executing loan documentation & payouts')}
+                        {step.description}
                       </Text>
                     </View>
                   </View>
@@ -352,6 +366,13 @@ const styles = StyleSheet.create({
   circleTextCompleted: {
     color: '#FFFFFF',
   },
+  circleFailed: {
+    backgroundColor: '#EF4444',
+    borderColor: '#EF4444',
+  },
+  circleTextFailed: {
+    color: '#FFFFFF',
+  },
   line: {
     width: 2,
     height: 60,
@@ -375,8 +396,8 @@ const styles = StyleSheet.create({
   stepLabelCompleted: {
     color: '#2D3134',
   },
-  stepLabelCurrent: {
-    color: '#DE1F26',
+  stepLabelFailed: {
+    color: '#EF4444',
   },
   stepSub: {
     fontSize: 11,

@@ -80,11 +80,9 @@ async function getSalesforceToken(): Promise<string> {
  * to corresponding frontend Lead statuses.
  */
 function mapLeadStatus(status: string): string {
-  if (status === 'Open - Not Contacted') return 'Pending';
-  if (status === 'Working - Contacted') return 'Processing';
-  if (status === 'Closed - Converted') return 'Approved';
-  if (status === 'Closed - Not Converted') return 'Rejected';
-  return status || 'Pending';
+  // Pass the raw Salesforce status through exactly as received.
+  // Fallback to 'New' if status is missing.
+  return status || 'New';
 }
 
 // ─── Spring Boot Header Helpers ────────────────────────────────────────────────
