@@ -385,8 +385,8 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   presetChipActive: {
-    backgroundColor: '#DE1F26',
-    borderColor: '#DE1F26',
+    backgroundColor: '#EF4444',
+    borderColor: '#EF4444',
   },
   presetText: {
     fontSize: 12,

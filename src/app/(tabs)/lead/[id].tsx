@@ -164,7 +164,7 @@ export default function LeadDetailsScreen() {
             <View style={[styles.divider, darkModeEnabled && styles.dividerDark]} />
             <View style={styles.row}>
               <Text style={[styles.label, darkModeEnabled && styles.textMutedDark]}>Amount</Text>
-              <Text style={[styles.value, { color: '#DE1F26' }]}>{lead.amount}</Text>
+              <Text style={[styles.value, darkModeEnabled && styles.textDark]}>{lead.amount}</Text>
             </View>
             <View style={[styles.divider, darkModeEnabled && styles.dividerDark]} />
             <View style={styles.row}>
@@ -200,8 +200,7 @@ export default function LeadDetailsScreen() {
                       <View style={[
                         styles.circle,
                         darkModeEnabled && styles.circleDark,
-                        isCompleted && styles.circleCompleted,
-                        isCurrent && styles.circleCurrent
+                        isCompleted && styles.circleCompleted
                       ]}>
                         <Text style={[
                           styles.circleText,
@@ -225,8 +224,7 @@ export default function LeadDetailsScreen() {
                         styles.stepLabel,
                         darkModeEnabled && styles.textMutedDark,
                         isCompleted && styles.stepLabelCompleted,
-                        isCompleted && darkModeEnabled && styles.textDark,
-                        isCurrent && styles.stepLabelCurrent
+                        isCompleted && darkModeEnabled && styles.textDark
                       ]}>
                         {step}
                       </Text>
@@ -389,7 +387,7 @@ const styles = StyleSheet.create({
   containerDark: { backgroundColor: '#0F172A' },
   cardDark: { backgroundColor: '#1E293B', borderColor: '#334155' },
   textDark: { color: '#F8FAFC' },
-  textMutedDark: { color: '#94A3B8' },
+  textMutedDark: { color: '#CBD5E1' },
   cardHeaderDark: { backgroundColor: '#0F172A', borderBottomColor: '#334155' },
   dividerDark: { backgroundColor: '#334155' },
   circleDark: { backgroundColor: '#1E293B', borderColor: '#475569' },

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
+import { useAuth } from '../../context/AuthContext';
 
 interface TopNavProps {
   title: string;
@@ -8,12 +9,14 @@ interface TopNavProps {
 }
 
 export function TopNav({ title, step }: TopNavProps) {
+  const { darkModeEnabled } = useAuth();
+  
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, darkModeEnabled && styles.headerDark]}>
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-        <Text style={styles.backText}>←</Text>
+        <Text style={[styles.backText, darkModeEnabled && styles.textDark]}>←</Text>
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>{title}</Text>
+      <Text style={[styles.headerTitle, darkModeEnabled && styles.textDark]}>{title}</Text>
       <View style={styles.rightContent}>
         {step ? (
           <Text style={styles.stepText}>{step}</Text>
@@ -56,5 +59,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#DE1F26',
     fontWeight: '600',
+  },
+  headerDark: {
+    backgroundColor: '#0F172A',
+    borderBottomColor: '#334155',
+  },
+  textDark: {
+    color: '#F8FAFC',
   },
 });
