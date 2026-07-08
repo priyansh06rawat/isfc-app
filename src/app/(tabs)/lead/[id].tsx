@@ -12,7 +12,7 @@ const STEPS = ['Lead Created', 'Docs Verified', 'Underwriting', 'Sanctioned', 'D
 
 export default function LeadDetailsScreen() {
   const { id } = useLocalSearchParams();
-  const { leads, onboardingData } = useAuth();
+  const { leads, onboardingData, darkModeEnabled } = useAuth();
 
   // Animation hooks
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -38,7 +38,7 @@ export default function LeadDetailsScreen() {
 
   if (!lead) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, darkModeEnabled && styles.containerDark]}>
         <TopNav title="Lead Details" />
         <View style={styles.errorContainer}>
           <MaterialCommunityIcons name="alert-circle-outline" size={24} color="#DC2626" style={{ marginBottom: 8 }} />
@@ -74,7 +74,7 @@ export default function LeadDetailsScreen() {
   const badge = getBadgeColors(lead.status);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, darkModeEnabled && styles.containerDark]}>
       <TopNav title="Lead Details" />
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -97,8 +97,8 @@ export default function LeadDetailsScreen() {
             <View style={[styles.avatar, { backgroundColor: lead.color || '#DE1F26' }]}>
               <Text style={styles.avatarText}>{initials}</Text>
             </View>
-            <Text style={styles.name}>{lead.name}</Text>
-            <Text style={styles.subtitle}>ID: {lead.id}</Text>
+            <Text style={[styles.name, darkModeEnabled && styles.textDark]}>{lead.name}</Text>
+            <Text style={[styles.subtitle, darkModeEnabled && styles.textMutedDark]}>ID: {lead.id}</Text>
             <View style={[styles.badge, { backgroundColor: badge.bg, borderColor: badge.border }]}>
               <Text style={[styles.badgeText, { color: badge.text }]}>{lead.status}</Text>
             </View>
@@ -153,39 +153,39 @@ export default function LeadDetailsScreen() {
           )}
 
           {/* Lead Metrics Card */}
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
+          <View style={[styles.card, darkModeEnabled && styles.cardDark]}>
+            <View style={[styles.cardHeader, darkModeEnabled && styles.cardHeaderDark]}>
               <Text style={styles.cardTitle}>Loan Summary</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Product</Text>
-              <Text style={styles.value}>{lead.product}</Text>
+              <Text style={[styles.label, darkModeEnabled && styles.textMutedDark]}>Product</Text>
+              <Text style={[styles.value, darkModeEnabled && styles.textDark]}>{lead.product}</Text>
             </View>
-            <View style={styles.divider} />
+            <View style={[styles.divider, darkModeEnabled && styles.dividerDark]} />
             <View style={styles.row}>
-              <Text style={styles.label}>Amount</Text>
+              <Text style={[styles.label, darkModeEnabled && styles.textMutedDark]}>Amount</Text>
               <Text style={[styles.value, { color: '#DE1F26' }]}>{lead.amount}</Text>
             </View>
-            <View style={styles.divider} />
+            <View style={[styles.divider, darkModeEnabled && styles.dividerDark]} />
             <View style={styles.row}>
-              <Text style={styles.label}>Location</Text>
-              <Text style={styles.value}>{lead.city}</Text>
+              <Text style={[styles.label, darkModeEnabled && styles.textMutedDark]}>Location</Text>
+              <Text style={[styles.value, darkModeEnabled && styles.textDark]}>{lead.city}</Text>
             </View>
-            <View style={styles.divider} />
+            <View style={[styles.divider, darkModeEnabled && styles.dividerDark]} />
             <View style={styles.row}>
-              <Text style={styles.label}>Mobile Number</Text>
-              <Text style={styles.value}>{lead.mobile || 'N/A'}</Text>
+              <Text style={[styles.label, darkModeEnabled && styles.textMutedDark]}>Mobile Number</Text>
+              <Text style={[styles.value, darkModeEnabled && styles.textDark]}>{lead.mobile || 'N/A'}</Text>
             </View>
-            <View style={styles.divider} />
+            <View style={[styles.divider, darkModeEnabled && styles.dividerDark]} />
             <View style={styles.row}>
-              <Text style={styles.label}>Created On</Text>
-              <Text style={styles.value}>{lead.date || 'N/A'}</Text>
+              <Text style={[styles.label, darkModeEnabled && styles.textMutedDark]}>Created On</Text>
+              <Text style={[styles.value, darkModeEnabled && styles.textDark]}>{lead.date || 'N/A'}</Text>
             </View>
           </View>
 
           {/* Pipeline Progress Tracker */}
-          <View style={styles.trackerContainer}>
-            <Text style={styles.trackerTitle}>Status Pipeline</Text>
+          <View style={[styles.trackerContainer, darkModeEnabled && styles.cardDark]}>
+            <Text style={[styles.trackerTitle, darkModeEnabled && styles.textDark]}>Status Pipeline</Text>
             
             <View style={styles.pipeline}>
               {STEPS.map((step, idx) => {
@@ -199,6 +199,7 @@ export default function LeadDetailsScreen() {
                     <View style={styles.nodeColumn}>
                       <View style={[
                         styles.circle,
+                        darkModeEnabled && styles.circleDark,
                         isCompleted && styles.circleCompleted,
                         isCurrent && styles.circleCurrent
                       ]}>
@@ -212,6 +213,7 @@ export default function LeadDetailsScreen() {
                       {showLine && (
                         <View style={[
                           styles.line,
+                          darkModeEnabled && styles.lineDark,
                           idx < activeStep && styles.lineCompleted
                         ]} />
                       )}
@@ -221,12 +223,14 @@ export default function LeadDetailsScreen() {
                     <View style={styles.labelColumn}>
                       <Text style={[
                         styles.stepLabel,
+                        darkModeEnabled && styles.textMutedDark,
                         isCompleted && styles.stepLabelCompleted,
+                        isCompleted && darkModeEnabled && styles.textDark,
                         isCurrent && styles.stepLabelCurrent
                       ]}>
                         {step}
                       </Text>
-                      <Text style={styles.stepSub}>
+                      <Text style={[styles.stepSub, darkModeEnabled && styles.textMutedDark]}>
                         {idx === 0 && 'Lead created in sourcing platform'}
                         {idx === 1 && (isCompleted ? 'All mandatory KYC/Income files validated' : 'Pending bank/KYC uploads')}
                         {idx === 2 && (isCompleted ? 'Passed credit screening & automated rule checks' : 'Underwriting review pipeline')}
@@ -379,6 +383,15 @@ const styles = StyleSheet.create({
   stepSub: {
     fontSize: 11,
     color: '#94A3B8',
-    lineHeight: 15,
+    lineHeight: 16,
   },
+  // Dark Mode Styles
+  containerDark: { backgroundColor: '#0F172A' },
+  cardDark: { backgroundColor: '#1E293B', borderColor: '#334155' },
+  textDark: { color: '#F8FAFC' },
+  textMutedDark: { color: '#94A3B8' },
+  cardHeaderDark: { backgroundColor: '#0F172A', borderBottomColor: '#334155' },
+  dividerDark: { backgroundColor: '#334155' },
+  circleDark: { backgroundColor: '#1E293B', borderColor: '#475569' },
+  lineDark: { backgroundColor: '#334155' },
 });

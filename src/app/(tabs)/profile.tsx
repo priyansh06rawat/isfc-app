@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 14,
   },
   labelRow: {
     flexDirection: 'row',
@@ -471,8 +471,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   divider: {
-    height: 1,
-    backgroundColor: '#F1F5F9',
+    display: 'none',
   },
   logoutBtn: {
     borderColor: '#FCA5A5',

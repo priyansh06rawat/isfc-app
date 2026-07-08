@@ -104,6 +104,20 @@ export default function DashboardScreen() {
     return styles.badgeWarningText;
   };
 
+  // Next Payout Calculations
+  const totalYtd = payouts.reduce((sum, p) => sum + (Number(p.amount.replace(/[^0-9.-]+/g, '')) || 0), 0);
+  const pendingAmount = payouts.filter(p => p.status === 'Pending').reduce((sum, p) => sum + (Number(p.amount.replace(/[^0-9.-]+/g, '')) || 0), 0);
+  const nextPayout = payouts.find(p => p.status === 'Pending');
+  const nextPayoutAmount = nextPayout ? nextPayout.amount : '₹0';
+  const nextPayoutDate = nextPayout && nextPayout.date ? `Due on ${nextPayout.date}` : 'No pending payouts';
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
   return (
     <SafeAreaView style={[styles.container, darkModeEnabled && styles.containerDark]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -112,7 +126,7 @@ export default function DashboardScreen() {
           <View style={[styles.hero, darkModeEnabled && styles.heroDark]}>
             <View style={styles.heroHeader}>
               <View>
-                <Text style={[styles.greeting, darkModeEnabled && styles.textDark]}>Good Evening, <Text style={styles.greetingHighlight}>{connectorRecord?.fullName || onboardingData.fullName || ''}!</Text></Text>
+                <Text style={[styles.greeting, darkModeEnabled && styles.textDark]}>{getGreeting()}, <Text style={styles.greetingHighlight}>{connectorRecord?.fullName || onboardingData.fullName || ''}!</Text></Text>
                 <Text style={[styles.greetingSub, darkModeEnabled && styles.textMutedDark]}>DSA Partner · Code: {dsaCode || connectorRecord?.connectorId || '—'}</Text>
               </View>
               <TouchableScale onPress={openBottomSheet} style={styles.avatar}>
@@ -201,12 +215,6 @@ export default function DashboardScreen() {
                 <Text style={[styles.actionLabel, darkModeEnabled && styles.textMutedDark]}>Payouts</Text>
               </TouchableScale>
 
-              <TouchableScale style={styles.actionBtn} onPress={() => Alert.alert('Desktop Admin', 'Opening India Shelter Admin Dashboard view...')}>
-                <View style={[styles.actionIconWrapper, { backgroundColor: 'rgba(255,184,48,0.06)', borderColor: 'rgba(255,184,48,0.15)', borderWidth: 1 }]}>
-                  <MaterialCommunityIcons name="monitor" size={24} color="#FFB830" />
-                </View>
-                <Text style={[styles.actionLabel, darkModeEnabled && styles.textMutedDark]}>Dashboard</Text>
-              </TouchableScale>
             </View>
           </View>
 
@@ -216,23 +224,23 @@ export default function DashboardScreen() {
               <View style={styles.payoutHeader}>
                 <View>
                   <Text style={[styles.payoutLabel, darkModeEnabled && styles.textMutedDark]}>NEXT PAYOUT</Text>
-                  <Text style={styles.payoutAmount}>₹84,200</Text>
-                  <Text style={[styles.payoutDate, darkModeEnabled && styles.textMutedDark]}>Due on 15 Jun 2026</Text>
+                  <Text style={styles.payoutAmount}>{nextPayoutAmount}</Text>
+                  <Text style={[styles.payoutDate, darkModeEnabled && styles.textMutedDark]}>{nextPayoutDate}</Text>
                 </View>
                 <MaterialCommunityIcons name="currency-inr" size={32} color="#10B981" />
               </View>
               <View style={[styles.payoutMetrics, darkModeEnabled && { borderTopColor: '#334155' }]}>
                 <View>
                   <Text style={[styles.metricLabel, darkModeEnabled && styles.textMutedDark]}>This Month</Text>
-                  <Text style={[styles.metricValue, { color: '#10B981' }]}>₹1.2L</Text>
+                  <Text style={[styles.metricValue, { color: '#10B981' }]}>₹{totalYtd > 0 ? (totalYtd/1000).toFixed(1) + 'K' : '0'}</Text>
                 </View>
                 <View>
                   <Text style={[styles.metricLabel, darkModeEnabled && styles.textMutedDark]}>Pending</Text>
-                  <Text style={[styles.metricValue, { color: '#F59E0B' }]}>₹42K</Text>
+                  <Text style={[styles.metricValue, { color: '#F59E0B' }]}>₹{pendingAmount > 0 ? pendingAmount.toLocaleString('en-IN') : '0'}</Text>
                 </View>
                 <View>
                   <Text style={[styles.metricLabel, darkModeEnabled && styles.textMutedDark]}>YTD</Text>
-                  <Text style={[styles.metricValue, { color: '#06B6D4' }]}>₹8.4L</Text>
+                  <Text style={[styles.metricValue, { color: '#06B6D4' }]}>₹{totalYtd > 0 ? totalYtd.toLocaleString('en-IN') : '0'}</Text>
                 </View>
               </View>
             </TouchableScale>
@@ -550,17 +558,16 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 12,
   },
   statBox: {
     flex: 1,
     backgroundColor: '#FFFFFF',
     paddingVertical: 18,
-    paddingHorizontal: 8,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     alignItems: 'center',
-    marginHorizontal: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.04,

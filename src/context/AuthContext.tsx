@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ConnectorAPI, ConnectorRecord, LeadAPI, PayoutAPI } from '../services/api';
 import { saveToken, getToken, removeToken, savePartnerData, getPartnerData, clearPartnerData } from '../services/storage';
 import * as LocalAuthentication from 'expo-local-authentication';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface Lead {
   id: string;
@@ -251,6 +252,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           fetchLeadsInBackground(pId);
           fetchPayoutsInBackground(pId);
         }
+        
+        // Restore dark mode preference
+        const storedDarkMode = await AsyncStorage.getItem('darkModeEnabled');
+        if (storedDarkMode !== null) {
+          setDarkModeEnabled(storedDarkMode === 'true');
+        }
       } catch (e) {
         console.warn('Session restore failed:', e);
       } finally {
@@ -488,7 +495,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fetchLeads: () => fetchLeadsInBackground(connectorSfId || undefined),
         loadMoreLeads,
         payouts,
-        fetchPayouts,
+        fetchPayouts: () => fetchPayoutsInBackground(connectorSfId || undefined),
         onboardingData,
         updateOnboardingData,
         submitRegistration,
@@ -497,7 +504,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         notificationsEnabled,
         setNotificationsEnabled,
         darkModeEnabled,
-        setDarkModeEnabled,
+        setDarkModeEnabled: async (enabled) => {
+          setDarkModeEnabled(enabled);
+          await AsyncStorage.setItem('darkModeEnabled', String(enabled));
+        },
         pushToken,
         setPushToken,
       }}

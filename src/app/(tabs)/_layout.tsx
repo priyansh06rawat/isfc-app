@@ -16,8 +16,8 @@ export default function TabLayout() {
           backgroundColor: darkModeEnabled ? '#0F172A' : '#FFFFFF',
           borderTopColor: darkModeEnabled ? '#1E293B' : '#F1F5F9',
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 85 : 65,
-          paddingBottom: Platform.OS === 'ios' ? 25 : 10,
+          height: Platform.OS === 'ios' ? 95 : 75,
+          paddingBottom: Platform.OS === 'ios' ? 35 : 20,
           paddingTop: 10,
           position: 'absolute',
           ...Platform.select({
