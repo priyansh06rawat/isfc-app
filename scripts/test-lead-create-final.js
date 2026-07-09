@@ -67,7 +67,7 @@ async function main() {
 
   if (r.status === 201) {
     console.log('✅ LEAD CREATED SUCCESSFULLY! ID:', r.body.id);
-    console.log('   Check in Partial Sandbox: https://isfc--partial.sandbox.my.salesforce.com');
+    console.log('   Check in Production Salesforce: https://isfc.my.salesforce.com');
     return;
   }
 

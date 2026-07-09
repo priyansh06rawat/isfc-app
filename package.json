@@ -1,7 +1,7 @@
 {
   "name": "isfc-app",
   "main": "expo-router/entry",
-  "version": "1.0.0",
+  "version": "14.0.2",
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
     "@expo/vector-icons": "^15.0.2",

@@ -7,8 +7,8 @@ import * as FileSystem from 'expo-file-system';
 // ─── Salesforce API Config ───────────────────────────────────────────────────
 // 3-layer fallback: EXPO_PUBLIC_ env var → app.config.js extra → hardcoded Sandbox default
 const extra = Constants.expoConfig?.extra || {};
-export const SF_LOGIN_URL = process.env.EXPO_PUBLIC_SF_LOGIN_URL || extra.SF_LOGIN_URL || 'https://isfc--partial.sandbox.my.salesforce.com';
-export const SF_INSTANCE_URL = process.env.EXPO_PUBLIC_SF_INSTANCE_URL || extra.SF_INSTANCE_URL || 'https://isfc--partial.sandbox.my.salesforce.com';
+export const SF_LOGIN_URL = process.env.EXPO_PUBLIC_SF_LOGIN_URL || extra.SF_LOGIN_URL || 'https://isfc.my.salesforce.com';
+export const SF_INSTANCE_URL = process.env.EXPO_PUBLIC_SF_INSTANCE_URL || extra.SF_INSTANCE_URL || 'https://isfc.my.salesforce.com';
 export const SF_CLIENT_ID = process.env.EXPO_PUBLIC_SF_CLIENT_ID || extra.SF_CLIENT_ID || '';
 export const SF_CLIENT_SECRET = process.env.EXPO_PUBLIC_SF_CLIENT_SECRET || extra.SF_CLIENT_SECRET || '';
 export const SF_USERNAME = process.env.EXPO_PUBLIC_SF_USERNAME || '';

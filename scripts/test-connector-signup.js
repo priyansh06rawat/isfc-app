@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const envPath = path.join(__dirname, '..', '.env');
-let SF_LOGIN_URL = 'https://isfc--partial.sandbox.my.salesforce.com';
+let SF_LOGIN_URL = 'https://isfc.my.salesforce.com';
 let SF_CLIENT_ID = '';
 let SF_CLIENT_SECRET = '';
 
