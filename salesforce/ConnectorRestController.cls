@@ -547,23 +547,19 @@ global class ConnectorRestController {
                 masters.cityList.add((String) result.get('CITY_NAME__c'));    
             }
         }
-        if (masters.cityList.size() == 0) {
-            masters.cityList = new List<String>{'Delhi','Gurgoan','Noida','Greater Noida'};
-        }
+
         
         results = [SELECT count(Id), Name FROM Bank_Detail__c GROUP BY Name];
         for (AggregateResult result : results) {
             masters.bankList.add((String) result.get('Name'));
         }
-        if (masters.bankList.size() == 0) {
-            masters.bankList = new List<String>{'ICICI','SBI','IDFC','HDFC'};
-        }
+
         
         masters.occupationList = getOccupationPickListValuesIntoList();
         masters.loanPurposeList = getLoanPurposePickListValuesIntoList();
-        masters.yearsList = new List<String>{'1 Year','2 Years','3 Years','4 Years','5 Years','6 Years','7 Years','8 Years','9 Years','10 Years','more then 10 years'};
+        masters.yearsList = getOccupationYearPickListValuesIntoList();
         masters.identityProofList = getIdentityPickListValuesIntoList();
-        masters.addressProofList = new List<String>{'PAN','Passport','Voter ID','Driving License','Aadhar'};
+        masters.addressProofList = getAddressProofPickListValuesIntoList();
         
         res.statusCode = 200;
         res.responseBody = Blob.valueOf('{"success":true, "status":"200", "masterdata": ' + JSON.serialize(masters) + '}');
@@ -634,6 +630,26 @@ global class ConnectorRestController {
     public static List<String> getOccupationPickListValuesIntoList(){
         List<String> pickListValuesList = new List<String>();
         Schema.DescribeFieldResult fieldResult = Lead.X8_Occupations__c.getDescribe();
+        List<Schema.PicklistEntry> ple = fieldResult.getPicklistValues();
+        for (Schema.PicklistEntry pickListVal : ple) {
+            pickListValuesList.add(pickListVal.getLabel());
+        }     
+        return pickListValuesList;
+    }
+
+    public static List<String> getAddressProofPickListValuesIntoList(){
+        List<String> pickListValuesList = new List<String>();
+        Schema.DescribeFieldResult fieldResult = Connector__c.AddressProofType__c.getDescribe();
+        List<Schema.PicklistEntry> ple = fieldResult.getPicklistValues();
+        for (Schema.PicklistEntry pickListVal : ple) {
+            pickListValuesList.add(pickListVal.getLabel());
+        }     
+        return pickListValuesList;
+    }
+
+    public static List<String> getOccupationYearPickListValuesIntoList(){
+        List<String> pickListValuesList = new List<String>();
+        Schema.DescribeFieldResult fieldResult = Connector__c.OccupationYear__c.getDescribe();
         List<Schema.PicklistEntry> ple = fieldResult.getPicklistValues();
         for (Schema.PicklistEntry pickListVal : ple) {
             pickListValuesList.add(pickListVal.getLabel());
