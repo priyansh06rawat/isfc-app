@@ -270,10 +270,10 @@ export default function ProfileScreen() {
           {/* Logout Button */}
           <Button
             title="Log Out"
-            variant="outline"
+            variant="primary"
             onPress={handleLogout}
             style={styles.logoutBtn}
-            textStyle={{ color: '#DE1F26' }}
+            textStyle={{ color: '#FFFFFF' }}
           />
 
           <View style={{ height: 100 }} />
@@ -474,8 +474,13 @@ const styles = StyleSheet.create({
     display: 'none',
   },
   logoutBtn: {
-    borderColor: '#FCA5A5',
-    backgroundColor: '#FFF5F5',
+    borderColor: '#DE1F26',
+    backgroundColor: '#DE1F26',
     marginTop: 8,
+    shadowColor: '#DE1F26',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
 });

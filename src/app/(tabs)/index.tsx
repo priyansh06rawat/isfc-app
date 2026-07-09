@@ -228,7 +228,6 @@ export default function DashboardScreen() {
                   <Text style={styles.payoutAmount}>{nextPayoutAmount}</Text>
                   <Text style={[styles.payoutDate, darkModeEnabled && styles.textMutedDark]}>{nextPayoutDate}</Text>
                 </View>
-                <MaterialCommunityIcons name="currency-inr" size={32} color="#10B981" />
               </View>
               <View style={[styles.payoutMetrics, darkModeEnabled && { borderTopColor: '#334155' }]}>
                 <View>
