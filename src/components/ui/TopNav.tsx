@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { AppText as Text } from './AppText';
 import { router } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 

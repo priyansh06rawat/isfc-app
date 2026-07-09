@@ -5,27 +5,39 @@ import { useEffect } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { ErrorFallback } from '../components/ErrorBoundary';
+import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold, Inter_900Black } from '@expo-google-fonts/inter';
+
+SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
   const { isLoading, isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    if (!isLoading) {
-      SplashScreen.hideAsync();
-    }
-  }, [isLoading]);
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Inter_800ExtraBold,
+    Inter_900Black,
+  });
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [isLoading, fontsLoaded]);
+
+  useEffect(() => {
+    if (!isLoading && fontsLoaded) {
       if (isAuthenticated) {
         router.replace('/(tabs)');
       } else {
         router.replace('/(auth)/login' as any);
       }
     }
-  }, [isLoading, isAuthenticated]);
+  }, [isLoading, isAuthenticated, fontsLoaded]);
 
-  if (isLoading) {
+  if (isLoading || !fontsLoaded) {
     return null;
   }
 

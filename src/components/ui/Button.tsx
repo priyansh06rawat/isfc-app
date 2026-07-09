@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   TouchableOpacity,
-  Text,
   StyleSheet,
   ActivityIndicator,
   TouchableOpacityProps,
@@ -9,6 +8,7 @@ import {
   TextStyle,
   StyleProp,
 } from 'react-native';
+import { AppText as Text } from './AppText';
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;

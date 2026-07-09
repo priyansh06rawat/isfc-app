@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Text, Animated, TouchableOpacity, Linking } from 'react-native';
+import { View, StyleSheet, ScrollView, Animated, TouchableOpacity, Linking } from 'react-native';
+import { AppText as Text } from '../../../components/ui/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';

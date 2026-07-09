@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, Animated, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, Platform, Animated, TouchableOpacity } from 'react-native';
+import { AppText as Text } from '../../components/ui/AppText';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
